@@ -19,7 +19,7 @@ import {
   UserRound,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { Wordmark } from '@/components/system/Wordmark';
+import { PulseLockup, Wordmark } from '@/components/system/Wordmark';
 import { buttonClasses } from '@/components/ui';
 import { cn } from '@/lib/utils';
 
@@ -393,7 +393,7 @@ function Architecture() {
             A layer between the records and the moment
           </h2>
           <p className="mt-5 text-[15px] leading-relaxed text-ink-600">
-            VITA does not replace the hospital system, the lab, or the national health stack. It sits
+            PULSE does not replace the hospital system, the lab, or the national health stack. It sits
             between them and the clinician, and does the one job none of them does: assemble a
             trustworthy answer to &ldquo;who is this, and what do I need to know right now?&rdquo;
           </p>
@@ -546,7 +546,7 @@ function Trust() {
               Every claim carries its evidence
             </h2>
             <p className="mt-5 text-[15px] leading-relaxed text-ink-600">
-              A medical value with no source is a rumour. In VITA, provenance is a type constraint,
+              A medical value with no source is a rumour. In PULSE, provenance is a type constraint,
               not a convention: a clinical value cannot be rendered in the interface without the
               document, page, date and confidence behind it.
             </p>
@@ -570,7 +570,7 @@ function Trust() {
               <TrustPoint
                 icon={<ShieldCheck className="size-3.5" />}
                 title="No autonomous diagnosis"
-                detail="VITA reports what its sources say. It does not interpret, recommend, or alter a medication record."
+                detail="PULSE reports what its sources say. It does not interpret, recommend, or alter a medication record."
               />
             </ul>
           </motion.div>
@@ -749,6 +749,7 @@ function Vision() {
     <section className="border-b border-line bg-canvas">
       <div className="mx-auto max-w-[1180px] px-5 py-20 sm:px-8 sm:py-28">
         <motion.div {...fadeUp} className="mx-auto max-w-2xl text-center">
+          <PulseLockup className="mb-9" />
           <div className="label-xs text-ink-400">The vision</div>
           <h2 className="mt-5 text-[32px] font-semibold leading-[1.15] tracking-[-0.03em] text-ink-900 sm:text-[42px]">
             One trusted health identity.

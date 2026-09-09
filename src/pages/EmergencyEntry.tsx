@@ -155,7 +155,7 @@ export default function EmergencyEntry() {
               className="inline-flex items-center gap-2 text-[13px] font-medium text-ink-400 transition-colors hover:text-ink-100"
             >
               <ArrowLeft className="size-4" />
-              VITA
+              PULSE
             </Link>
             <div className="flex items-center gap-2.5">
               <span className="size-2 rounded-full bg-critical-bright pulse-dot" aria-hidden />

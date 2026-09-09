@@ -122,7 +122,7 @@ export function EvidenceDrawer() {
               <p className="flex items-start gap-2 text-[11.5px] leading-relaxed text-ink-400">
                 <ShieldCheck className="mt-px size-3.5 shrink-0 text-ink-300" />
                 <span>
-                  VITA reports what its sources say and where they say it. It does not diagnose,
+                  PULSE reports what its sources say and where they say it. It does not diagnose,
                   recommend treatment, or alter medication records.
                 </span>
               </p>
@@ -325,7 +325,7 @@ function ConflictBody({ conflict }: { conflict: Conflict }) {
             <p className="mt-1.5 text-[12.5px] leading-relaxed text-ink-600">
               {resolved
                 ? `${conflict.resolvedBy} confirmed "${conflict.resolvedValue}" as the value to act on. Both source records remain visible below and in the audit trail.`
-                : 'Two sources disagree. VITA has not selected a value and will not do so — both records are shown as they were written.'}
+                : 'Two sources disagree. PULSE has not selected a value and will not do so — both records are shown as they were written.'}
             </p>
           </div>
         </div>

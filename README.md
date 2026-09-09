@@ -1,4 +1,4 @@
-# VITA — Emergency Health Identity Layer
+# PULSE — Emergency Health Identity Layer
 
 > **When the patient can't speak, their history still can.**
 
@@ -40,7 +40,7 @@ it is unreachable.
 conscious, articulate and well enough to remember their own dose — an assumption that fails in
 exactly the moment the information matters most.
 
-**What VITA does.** Ingests fragmented records, extracts structured clinical entities, reconciles
+**What PULSE does.** Ingests fragmented records, extracts structured clinical entities, reconciles
 them across sources and time, and assembles the reduced snapshot a clinician can read in ten
 seconds. It does not diagnose, recommend treatment, or alter a medication record.
 
@@ -75,7 +75,7 @@ AI-derived medical claim in this interface without also being able to show where
 
 ### Conflicts are the output, not a failure
 
-Two prescriptions disagree about the atorvastatin dose — 10 mg in May, 20 mg in August. VITA
+Two prescriptions disagree about the atorvastatin dose — 10 mg in May, 20 mg in August. PULSE
 shows both and stops. There is no recency rule, no confidence tie-break, no
 specialist-authority heuristic, and deliberately no `resolvedValue` produced by the system.
 A clinician records the decision, and their name goes on it in the audit trail.
@@ -159,8 +159,13 @@ There is deliberately no `diagnose()`, no `recommend()`, and no `chooseCorrectVa
 
 - **Two surfaces.** Warm-white application (`#FBFAF7`) and near-black emergency surface
   (`#05080F`). Every primitive takes a `surface` prop rather than maintaining two component sets.
-- **Colour is a signal channel.** Critical red appears on allergies and the emergency rule and
-  almost nowhere else. Amber means "a human needs to look at this". Green means verified.
+- **Colour is a signal channel.** The brand mark is green and red, and rather than scattering
+  those two colours as decoration each is bound to a meaning and used only there: brand green
+  (`#0B6B3A`) means *verified*, so it appears on every clinician-verified claim; brand red
+  (`#DD2027`) means *critical*, so it appears on allergies and the emergency rule and almost
+  nowhere else. Amber means "a human needs to look at this". Structure stays midnight ink;
+  interaction stays blue. The product reads as branded because green and red are everywhere —
+  but always because they mean something.
 - **The allergy is set at 46px** because nothing else on that screen is allowed to compete
   with it.
 - **IBM Plex Mono** carries provenance — timestamps, confidence, document ids, codes — so

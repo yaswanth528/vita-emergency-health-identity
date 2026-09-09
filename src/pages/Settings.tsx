@@ -96,7 +96,7 @@ export default function Settings() {
           <div className="mt-4 space-y-2.5">
             <Principle
               title="No autonomous diagnosis"
-              detail="VITA does not interpret findings, suggest a differential, or assign a diagnosis. It reports diagnoses that appear in source documents, attributed to the clinician who made them."
+              detail="PULSE does not interpret findings, suggest a differential, or assign a diagnosis. It reports diagnoses that appear in source documents, attributed to the clinician who made them."
             />
             <Principle
               title="No invented medication changes"

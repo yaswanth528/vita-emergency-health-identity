@@ -370,7 +370,7 @@ export default function EmergencyMode() {
             <ShieldCheck className="mt-px size-3.5 shrink-0" />
             <span>
               This snapshot reflects {documents.length} linked sources only. Absence of a record here is
-              not evidence of absence of a condition. VITA does not diagnose, recommend treatment, or
+              not evidence of absence of a condition. PULSE does not diagnose, recommend treatment, or
               alter medication records — it reports what its sources say and where they say it.
             </span>
           </p>
@@ -492,7 +492,7 @@ function ConflictBanner({ count }: { count: number }) {
             Conflicting records detected — clinician verification required
           </p>
           <p className="mt-1 text-[12.5px] leading-relaxed text-ink-300">
-            {count === 1 ? 'One value has' : `${count} values have`} disagreeing sources. VITA has not
+            {count === 1 ? 'One value has' : `${count} values have`} disagreeing sources. PULSE has not
             selected between them.
           </p>
           <div className="mt-2.5 flex flex-wrap gap-2">

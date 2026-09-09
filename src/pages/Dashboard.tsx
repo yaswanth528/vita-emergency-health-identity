@@ -125,7 +125,7 @@ export default function Dashboard() {
                   verification
                 </h3>
                 <p className="mt-1.5 text-[13px] leading-relaxed text-ink-500">
-                  Two of your sources disagree. VITA has not chosen between them — both versions stay
+                  Two of your sources disagree. PULSE has not chosen between them — both versions stay
                   visible until a clinician confirms which is correct.
                 </p>
                 <div className="mt-3 flex flex-wrap gap-2">

@@ -114,7 +114,7 @@ export default function Consent() {
           <FieldLabel>Why break-glass exists</FieldLabel>
           <p className="mt-2 max-w-3xl text-[13px] leading-relaxed text-ink-600">
             A consent model that cannot be overridden in an emergency is a consent model that gets
-            switched off in an emergency. So VITA includes the override, and makes it expensive: it
+            switched off in an emergency. So PULSE includes the override, and makes it expensive: it
             is labelled break-glass in the record, it expires in two hours, it notifies the patient
             and their caregiver at the moment it is used, and every screen the clinician opens under
             it is logged against their name. The point is not to prevent emergency access. It is to

@@ -1,5 +1,5 @@
 /* ============================================================================
-   VITA — domain model
+   PULSE — domain model
    ----------------------------------------------------------------------------
    Design rule that governs this entire file:
 
@@ -74,7 +74,7 @@ export interface Evidence {
   extractedValue: string;
   /** Date the clinical event occurred / document was authored. */
   documentDate: ISODate;
-  /** When VITA processed it. */
+  /** When PULSE processed it. */
   extractedAt: ISODate;
   confidence: Confidence;
   method: ExtractionMethod;
@@ -109,7 +109,7 @@ export interface MedicalDocument {
   uploadedAt: ISODate;
   /** Originating institution or system. */
   source: string;
-  /** How the document reached VITA. */
+  /** How the document reached PULSE. */
   channel: 'patient-upload' | 'caregiver-upload' | 'hospital-sync' | 'lab-sync';
   pages: number;
   sizeKb: number;
@@ -144,7 +144,7 @@ export interface Medication {
   changedOn?: ISODate;
   previousDose?: string;
   prescriber: string;
-  /** Interactions VITA surfaces for clinician awareness - never a recommendation. */
+  /** Interactions PULSE surfaces for clinician awareness - never a recommendation. */
   cautions?: string[];
   /** Condition ids this medication treats. */
   treats: string[];
@@ -283,7 +283,7 @@ export interface ConflictClaim {
 }
 
 /**
- * Where sources disagree, VITA presents both and stops.
+ * Where sources disagree, PULSE presents both and stops.
  * There is deliberately no automatic winner - the system does not choose.
  */
 export interface Conflict {

@@ -148,7 +148,7 @@ export default function ClinicianPatient() {
             <EmptyState
               icon={<FileStack />}
               title="Sparse profile — treat absence as unknown"
-              description={`${patient.displayName} has ${status.linkedSources} linked source${status.linkedSources === 1 ? '' : 's'}. A thin record is not a clean bill of health: it means VITA has nothing to report, not that there is nothing to report. Proceed on clinical assessment.`}
+              description={`${patient.displayName} has ${status.linkedSources} linked source${status.linkedSources === 1 ? '' : 's'}. A thin record is not a clean bill of health: it means PULSE has nothing to report, not that there is nothing to report. Proceed on clinical assessment.`}
               action={
                 <Link to="/clinician" className={buttonClasses({ variant: 'secondary', size: 'sm' })}>
                   Back to patient search
@@ -179,7 +179,7 @@ export default function ClinicianPatient() {
                 <SectionHeader
                   eyebrow="Reconciliation held these back"
                   title="Conflicting records"
-                  description="VITA has not selected a value. Confirming one records your name and the time against the decision."
+                  description="PULSE has not selected a value. Confirming one records your name and the time against the decision."
                 />
                 <div className="mt-4 space-y-3">
                   {conflicts.map((c) => (
@@ -307,7 +307,7 @@ export default function ClinicianPatient() {
                 <p className="max-w-3xl text-[12.5px] leading-relaxed text-ink-600">
                   This snapshot is assembled from {snapshot.sourceCount} linked documents. It reports
                   what those sources record and where they record it. It contains no diagnosis, no
-                  treatment recommendation, and no value that VITA selected on your behalf.
+                  treatment recommendation, and no value that PULSE selected on your behalf.
                 </p>
               </div>
             </Card>

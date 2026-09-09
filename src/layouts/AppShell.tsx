@@ -106,7 +106,7 @@ export function AppShell() {
         {/* --- Desktop sidebar --------------------------------------------- */}
         <aside className="sticky top-0 hidden h-dvh w-[248px] shrink-0 flex-col border-r border-line bg-canvas lg:flex">
           <div className="px-5 py-5">
-            <Link to="/" aria-label="VITA home">
+            <Link to="/" aria-label="PULSE home">
               <Wordmark className="h-[18px]" />
             </Link>
           </div>

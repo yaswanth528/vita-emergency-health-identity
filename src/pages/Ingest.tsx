@@ -193,7 +193,7 @@ export default function Ingest() {
                 <h3 className="text-[13.5px] font-semibold text-ink-900">Where the model sits</h3>
                 <p className="mt-1.5 max-w-3xl text-[12.5px] leading-relaxed text-ink-600">
                   Extraction, normalisation and reconciliation are model work. Interpretation is not.
-                  VITA never produces a diagnosis, a treatment recommendation, or a medication change
+                  PULSE never produces a diagnosis, a treatment recommendation, or a medication change
                   — it produces a structured, sourced, timestamped view of what other clinicians have
                   already recorded.
                 </p>

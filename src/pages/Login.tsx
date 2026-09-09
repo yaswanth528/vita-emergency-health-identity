@@ -1,6 +1,6 @@
 import { ArrowLeft, ArrowRight, Fingerprint, ShieldCheck, Stethoscope, UserRound, UsersRound } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Wordmark } from '@/components/system/Wordmark';
+import { PulseLockup, Wordmark } from '@/components/system/Wordmark';
 import { Card, FieldLabel } from '@/components/ui';
 
 /* ============================================================================
@@ -60,6 +60,8 @@ export default function Login() {
       </header>
 
       <main className="mx-auto flex w-full max-w-[820px] flex-1 flex-col justify-center px-5 py-12 sm:px-8">
+        <PulseLockup className="mb-10 self-center" />
+
         <div className="label-xs text-ink-400">Sign in</div>
         <h1 className="mt-3 text-[30px] font-semibold leading-tight tracking-[-0.03em] text-ink-900">
           Who are you signing in as?

@@ -1,9 +1,19 @@
 @import 'tailwindcss';
 
 /* ============================================================================
-   VITA DESIGN SYSTEM
+   PULSE DESIGN SYSTEM
    Clinical infrastructure, not consumer health. Warm-white ground, midnight ink,
    cool slate structure. Colour is a signal channel — never decoration.
+
+   The brand mark is green and red. Rather than sprinkling those two colours
+   around as decoration, each is bound to a meaning and used only there:
+
+     brand green  ->  verified / trust      (every clinician-verified claim)
+     brand red    ->  critical              (allergies, emergency mode)
+
+   So the product reads as branded because green and red appear constantly —
+   but always because they mean something, never because they are the logo's
+   colours. Structure stays midnight ink; interaction stays blue.
    ========================================================================== */
 
 @theme {
@@ -28,14 +38,19 @@
   --color-line: #e6e2d9;
   --color-line-strong: #d6d1c5;
 
+  /* --- Brand: taken from the PULSE mark ------------------------------------ */
+  --color-brand: #0b6b3a;
+  --color-brand-deep: #07512b;
+  --color-brand-red: #dd2027;
+
   /* --- Signal: used sparingly, always meaningful ---------------------------- */
-  --color-critical-50: #fdf2f1;
-  --color-critical-100: #fbe0dd;
-  --color-critical-300: #ee948c;
-  --color-critical-500: #d0392f;
-  --color-critical-600: #b62d24;
-  --color-critical-700: #92241d;
-  --color-critical-bright: #ff5c4d;
+  --color-critical-50: #fdf2f2;
+  --color-critical-100: #fadedf;
+  --color-critical-300: #ef8f92;
+  --color-critical-500: #d4232b;
+  --color-critical-600: #b41a21;
+  --color-critical-700: #8f141a;
+  --color-critical-bright: #ff5147;
 
   --color-caution-50: #fdf7ec;
   --color-caution-100: #f9ebcf;
@@ -44,12 +59,13 @@
   --color-caution-600: #96620a;
   --color-caution-bright: #f0ac3c;
 
-  --color-verified-50: #eff8f3;
-  --color-verified-100: #d6eee1;
-  --color-verified-300: #7cc7a3;
-  --color-verified-500: #17805c;
-  --color-verified-600: #106349;
-  --color-verified-bright: #3fc48f;
+  /* Verified is the brand green — trust is the thing the mark stands for. */
+  --color-verified-50: #eff7f2;
+  --color-verified-100: #d3e8dc;
+  --color-verified-300: #6fb28d;
+  --color-verified-500: #0b6b3a;
+  --color-verified-600: #07512b;
+  --color-verified-bright: #3fc98a;
 
   --color-accent-50: #eef3fe;
   --color-accent-100: #dbe6fd;

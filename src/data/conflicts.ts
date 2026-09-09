@@ -5,7 +5,7 @@ import type { Conflict } from '@/types';
  *
  * The product rule this file exists to enforce:
  *
- *   When two records contradict each other, VITA presents both and stops.
+ *   When two records contradict each other, PULSE presents both and stops.
  *
  * There is no "most recent wins" heuristic, no confidence tie-break, no silent
  * merge. A newer document is not automatically a truer one - a patient may have

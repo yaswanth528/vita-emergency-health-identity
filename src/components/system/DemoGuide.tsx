@@ -53,7 +53,7 @@ const STEPS: Step[] = [
     route: '/emergency/pt-4491',
     title: 'Conflicts are not resolved',
     detail:
-      'Two prescriptions disagree about the statin dose. VITA shows both and stops — no recency rule, no confidence tie-break. A clinician decides, and their name goes on the decision.',
+      'Two prescriptions disagree about the statin dose. PULSE shows both and stops — no recency rule, no confidence tie-break. A clinician decides, and their name goes on the decision.',
     action: 'open-conflict',
   },
   {
