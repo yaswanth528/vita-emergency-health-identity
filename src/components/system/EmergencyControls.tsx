@@ -1,4 +1,3 @@
-import { AnimatePresence, motion } from 'framer-motion';
 import { CircleAlert, Clock3, MapPin, ShieldCheck, Siren, TriangleAlert, X } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -47,33 +46,26 @@ export function Modal({
     };
   }, [open, onClose]);
 
+  /* CSS transitions rather than an AnimatePresence exit: exits in this build do
+     not reliably settle, and a break-glass dialog stranded over the emergency
+     context would be considerably worse than one that fades plainly. */
+  if (!open) return null;
+
   return (
-    <AnimatePresence>
-      {open && (
-        <>
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.16 }}
-            onClick={onClose}
-            className="fixed inset-0 z-[70] bg-ink-950/50 backdrop-blur-[2px]"
-          />
-          <motion.div
-            initial={{ opacity: 0, y: 12, scale: 0.985 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 8, scale: 0.99 }}
-            transition={{ duration: 0.2, ease: [0.22, 0.61, 0.36, 1] }}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby={labelledBy}
-            className="fixed left-1/2 top-1/2 z-[71] w-[min(520px,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-xl border border-line bg-canvas shadow-raised"
-          >
-            {children}
-          </motion.div>
-        </>
-      )}
-    </AnimatePresence>
+    <>
+      <div
+        onClick={onClose}
+        className="fixed inset-0 z-[70] bg-ink-950/50 backdrop-blur-[2px] motion-safe:animate-[vita-rise_0.18s_ease-out]"
+      />
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={labelledBy}
+        className="fixed left-1/2 top-1/2 z-[71] w-[min(520px,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-xl border border-line bg-canvas shadow-raised motion-safe:animate-[vita-rise_0.22s_cubic-bezier(0.22,0.61,0.36,1)]"
+      >
+        {children}
+      </div>
+    </>
   );
 }
 

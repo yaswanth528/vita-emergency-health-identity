@@ -1,4 +1,3 @@
-import { AnimatePresence, motion } from 'framer-motion';
 import {
   ArrowUpRight,
   Cpu,
@@ -9,7 +8,7 @@ import {
   TriangleAlert,
   X,
 } from 'lucide-react';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Badge, Button, FieldLabel, Rule } from '@/components/ui';
 import { ConfidenceMeter } from '@/components/evidence/EvidenceBadge';
@@ -45,8 +44,28 @@ function isHighlighted(line: string, excerpt: string): boolean {
 export function EvidenceDrawer() {
   const { viewer, closeViewer, claimLabel, conflicts } = useVita();
 
+  /**
+   * The panel stays mounted and slides with a CSS transition rather than an
+   * AnimatePresence exit. Exit animations in this build do not reliably settle,
+   * which left the drawer stranded half-open over the page underneath — and an
+   * overlay that might not close is worse than one that does not animate.
+   *
+   * `shown` lags `viewer` by the slide duration so the content does not blank
+   * out while the panel is still on screen.
+   */
+  const open = viewer !== null;
+  const [shown, setShown] = useState(viewer);
   useEffect(() => {
-    if (!viewer) return;
+    if (viewer) {
+      setShown(viewer);
+      return;
+    }
+    const t = setTimeout(() => setShown(null), 300);
+    return () => clearTimeout(t);
+  }, [viewer]);
+
+  useEffect(() => {
+    if (!open) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') closeViewer();
     };
@@ -56,81 +75,76 @@ export function EvidenceDrawer() {
       window.removeEventListener('keydown', onKey);
       document.body.style.overflow = '';
     };
-  }, [viewer, closeViewer]);
+  }, [open, closeViewer]);
 
-  const evidenceItem = viewer?.kind === 'evidence' ? getEvidence(viewer.evidenceId) : undefined;
+  const evidenceItem = shown?.kind === 'evidence' ? getEvidence(shown.evidenceId) : undefined;
   const doc = evidenceItem ? documentById(evidenceItem.documentId) : undefined;
   const conflict =
-    viewer?.kind === 'conflict' ? conflicts.find((c) => c.id === viewer.conflictId) : undefined;
+    shown?.kind === 'conflict' ? conflicts.find((c) => c.id === shown.conflictId) : undefined;
 
   return (
-    <AnimatePresence>
-      {viewer && (
-        <>
-          <motion.div
-            key="scrim"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.18 }}
-            onClick={closeViewer}
-            className="fixed inset-0 z-40 bg-ink-950/45 backdrop-blur-[1.5px]"
-          />
-          <motion.aside
-            key="drawer"
-            initial={{ x: '100%' }}
-            animate={{ x: 0 }}
-            exit={{ x: '100%' }}
-            transition={{ type: 'tween', duration: 0.26, ease: [0.22, 0.61, 0.36, 1] }}
-            role="dialog"
-            aria-modal="true"
-            aria-label="Evidence"
-            className="fixed inset-y-0 right-0 z-50 flex w-full max-w-[540px] flex-col bg-canvas shadow-drawer"
-          >
-            <header className="flex items-start justify-between gap-4 border-b border-line bg-white px-5 py-4">
-              <div className="min-w-0">
-                <div className="label-xs mb-1.5 flex items-center gap-1.5 text-ink-400">
-                  {conflict ? (
-                    <>
-                      <Scale className="size-3" /> Conflicting records
-                    </>
-                  ) : (
-                    <>
-                      <Fingerprint className="size-3" /> Evidence
-                    </>
-                  )}
-                </div>
-                <h2 className="truncate text-[15px] font-semibold text-ink-900">
-                  {claimLabel ?? conflict?.subject ?? 'Source record'}
-                </h2>
-              </div>
-              <button
-                onClick={closeViewer}
-                aria-label="Close evidence"
-                className="-mr-1 -mt-1 shrink-0 rounded-md p-2 text-ink-400 transition-colors hover:bg-ink-50 hover:text-ink-800"
-              >
-                <X className="size-4" />
-              </button>
-            </header>
-
-            <div className="min-h-0 flex-1 overflow-y-auto">
-              {conflict && <ConflictBody conflict={conflict} />}
-              {evidenceItem && doc && <EvidenceBody evidence={evidenceItem} doc={doc} />}
+    <>
+      <div
+        onClick={closeViewer}
+        aria-hidden={!open}
+        className={cn(
+          'fixed inset-0 z-40 bg-ink-950/45 backdrop-blur-[1.5px] transition-opacity duration-200',
+          open ? 'opacity-100' : 'pointer-events-none opacity-0',
+        )}
+      />
+      <aside
+        role="dialog"
+        aria-modal="true"
+        aria-label="Evidence"
+        aria-hidden={!open}
+        className={cn(
+          'fixed inset-y-0 right-0 z-50 flex w-full max-w-[540px] flex-col bg-canvas shadow-drawer',
+          'transition-transform duration-[260ms] ease-[cubic-bezier(0.22,0.61,0.36,1)]',
+          open ? 'translate-x-0' : 'pointer-events-none translate-x-full',
+        )}
+      >
+        <header className="flex items-start justify-between gap-4 border-b border-line bg-white px-5 py-4">
+          <div className="min-w-0">
+            <div className="label-xs mb-1.5 flex items-center gap-1.5 text-ink-400">
+              {conflict ? (
+                <>
+                  <Scale className="size-3" /> Conflicting records
+                </>
+              ) : (
+                <>
+                  <Fingerprint className="size-3" /> Evidence
+                </>
+              )}
             </div>
+            <h2 className="truncate text-[15px] font-semibold text-ink-900">
+              {claimLabel ?? conflict?.subject ?? 'Source record'}
+            </h2>
+          </div>
+          <button
+            onClick={closeViewer}
+            aria-label="Close evidence"
+            className="-mr-1 -mt-1 shrink-0 rounded-md p-2 text-ink-400 transition-colors hover:bg-ink-50 hover:text-ink-800"
+          >
+            <X className="size-4" />
+          </button>
+        </header>
 
-            <footer className="border-t border-line bg-white px-5 py-3">
-              <p className="flex items-start gap-2 text-[11.5px] leading-relaxed text-ink-400">
-                <ShieldCheck className="mt-px size-3.5 shrink-0 text-ink-300" />
-                <span>
-                  PULSE reports what its sources say and where they say it. It does not diagnose,
-                  recommend treatment, or alter medication records.
-                </span>
-              </p>
-            </footer>
-          </motion.aside>
-        </>
-      )}
-    </AnimatePresence>
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          {conflict && <ConflictBody conflict={conflict} />}
+          {evidenceItem && doc && <EvidenceBody evidence={evidenceItem} doc={doc} />}
+        </div>
+
+        <footer className="border-t border-line bg-white px-5 py-3">
+          <p className="flex items-start gap-2 text-[11.5px] leading-relaxed text-ink-400">
+            <ShieldCheck className="mt-px size-3.5 shrink-0 text-ink-300" />
+            <span>
+              PULSE reports what its sources say and where they say it. It does not diagnose,
+              recommend treatment, or alter medication records.
+            </span>
+          </p>
+        </footer>
+      </aside>
+    </>
   );
 }
 

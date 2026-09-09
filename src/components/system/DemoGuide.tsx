@@ -168,13 +168,14 @@ export function DemoGuide() {
         onEmergency ? 'bottom-[76px] sm:bottom-[74px]' : 'bottom-4',
       )}
     >
-      <AnimatePresence mode="wait">
+      <AnimatePresence initial={false}>
         {!open ? (
           <motion.button
             key="pill"
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 8 }}
+            transition={{ duration: 0.16 }}
             onClick={start}
             className="surface-dark inline-flex items-center gap-2 rounded-full border border-ink-700 bg-ink-900/95 px-3.5 py-2 text-[12.5px] font-medium text-ink-100 shadow-raised backdrop-blur-sm transition-colors hover:bg-ink-800"
           >
@@ -189,7 +190,7 @@ export function DemoGuide() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.98 }}
             transition={{ duration: 0.2 }}
-            className="surface-dark w-[min(380px,calc(100vw-2rem))] overflow-hidden rounded-lg border border-ink-700 bg-ink-900/97 shadow-raised backdrop-blur-sm"
+            className="surface-dark absolute bottom-0 left-0 w-[min(380px,calc(100vw-2rem))] overflow-hidden rounded-lg border border-ink-700 bg-ink-900/97 shadow-raised backdrop-blur-sm"
           >
             <div className="flex items-center justify-between border-b border-ink-800 px-3.5 py-2.5">
               <span className="label-xs text-ink-400">
