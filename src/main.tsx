@@ -6,7 +6,7 @@ import './index.css';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    {/* BASE_URL is '/' in dev and '/<repo>/' in the Pages build. */}
+    {/* BASE_URL is '/' in dev and on Vercel, '/<repo>/' in the Pages build. */}
     <BrowserRouter basename={import.meta.env.BASE_URL}>
       <App />
     </BrowserRouter>
