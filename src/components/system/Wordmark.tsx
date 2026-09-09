@@ -77,28 +77,32 @@ export function Wordmark({
  * Drawn directly in the lockup's coordinate space (centred on x=280) so the
  * emblem sits in the L slot of the wordmark rather than floating above it.
  *
- * Paint order matters and is the opposite of the drawing order you might
- * expect: wings first so they sit behind, then the staff, then the serpents,
- * then the heads on top. Getting this wrong buries the heads in the feathers,
- * which is what makes a caduceus stop reading as a caduceus.
+ * Paint order matters and is the opposite of the order you might draw in:
+ * wings first so they sit behind, then the staff, then the serpents, then the
+ * heads on top. Drawn the other way the heads get buried in the wings, which
+ * is what stops a caduceus reading as a caduceus.
  */
 function Caduceus() {
-  /* Four tapered feathers per wing, longest on top, rooted at the staff. */
+  /**
+   * Three layered wing leaves per side. The gradient runs light at the outer
+   * tip to deep green at the root; because the right wing is produced by
+   * mirroring this group and the gradient is in user space, it mirrors with it
+   * and stays light at *its* tip too.
+   */
   const wing = (
-    <g fill={RED}>
-      <path d="M266 86C216 50 160 38 110 52c46 6 100 18 154 44z" />
-      <path d="M266 102C224 72 178 62 136 74c40 6 84 14 128 36z" />
-      <path d="M266 118C230 94 192 86 158 96c34 5 70 12 106 28z" />
-      <path d="M266 134C236 116 206 110 180 118c28 4 56 10 84 22z" />
+    <g fill="url(#pulse-wing)">
+      <path d="M268 88C214 40 142 22 76 48c40 20 114 30 192 56z" />
+      <path d="M266 112C220 78 162 62 104 82c42 18 94 30 158 56z" />
+      <path d="M262 148C228 124 186 114 142 126c38 14 78 24 116 42z" />
     </g>
   );
 
   return (
     <g>
       {/* Cross */}
-      <g fill={RED}>
-        <rect x="270" y="2" width="20" height="56" rx="2.5" />
-        <rect x="252" y="20" width="56" height="20" rx="2.5" />
+      <g fill="url(#pulse-red)">
+        <rect x="269" y="2" width="22" height="58" rx="4" />
+        <rect x="251" y="20" width="58" height="22" rx="4" />
       </g>
 
       {/* Wings, mirrored about the centre line */}
@@ -106,24 +110,24 @@ function Caduceus() {
       <g transform="translate(560 0) scale(-1 1)">{wing}</g>
 
       {/* Staff, finial, tapered tip */}
-      <circle cx="280" cy="74" r="11" fill={GREEN} />
-      <path d="M280 74V282" stroke={GREEN} strokeWidth="11" strokeLinecap="butt" fill="none" />
-      <path d="M280 272l-10 26 10 32 10-32z" fill={GREEN} />
+      <path d="M280 74V282" stroke="url(#pulse-green)" strokeWidth="11" fill="none" />
+      <circle cx="280" cy="76" r="13" fill="url(#pulse-green)" />
+      <path d="M280 272l-10 26 10 32 10-32z" fill="url(#pulse-green)" />
 
       {/* Twin serpents — three tight crossings, tails converging on the staff */}
-      <g fill="none" stroke={GREEN} strokeWidth="10" strokeLinecap="round">
-        <path d="M248 100c0 28 64 28 64 56s-64 28-64 56 32 26 32 56" />
-        <path d="M312 100c0 28-64 28-64 56s64 28 64 56-32 26-32 56" />
+      <g fill="none" stroke="url(#pulse-green)" strokeWidth="10" strokeLinecap="round">
+        <path d="M248 104c0 28 64 28 64 56s-64 28-64 56 32 26 32 54" />
+        <path d="M312 104c0 28-64 28-64 56s64 28 64 56-32 26-32 54" />
       </g>
 
-      {/* Heads and forked tongues, on top of the feathers */}
-      <g fill={GREEN}>
-        <ellipse cx="240" cy="88" rx="16" ry="10" transform="rotate(-28 240 88)" />
-        <ellipse cx="320" cy="88" rx="16" ry="10" transform="rotate(28 320 88)" />
+      {/* Heads and forked tongues, on top of the wings */}
+      <g fill="url(#pulse-green)">
+        <ellipse cx="243" cy="94" rx="15" ry="10" transform="rotate(-32 243 94)" />
+        <ellipse cx="317" cy="94" rx="15" ry="10" transform="rotate(32 317 94)" />
       </g>
-      <g stroke={GREEN} strokeWidth="3.2" strokeLinecap="round" fill="none">
-        <path d="M226 78l-13-7M226 78l-10-12" />
-        <path d="M334 78l13-7M334 78l10-12" />
+      <g stroke={GREEN} strokeWidth="3" strokeLinecap="round" fill="none">
+        <path d="M231 84l-12-7M231 84l-9-11" />
+        <path d="M329 84l12-7M329 84l9-11" />
       </g>
     </g>
   );
@@ -154,11 +158,38 @@ export function PulseLockup({
       role="img"
       aria-label="PULSE"
     >
+      <defs>
+        {/* Vertical, top-lit — matches the shading in the source artwork. */}
+        <linearGradient id="pulse-green" x1="0" y1="60" x2="0" y2="320" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stopColor="#1a8b4e" />
+          <stop offset="1" stopColor="#06522a" />
+        </linearGradient>
+        {/* Horizontal: light at the outer wing tip, deep at the root. */}
+        <linearGradient id="pulse-wing" x1="84" y1="0" x2="272" y2="0" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stopColor="#3faa69" />
+          <stop offset="1" stopColor="#0a6435" />
+        </linearGradient>
+        <linearGradient id="pulse-red" x1="0" y1="0" x2="0" y2="62" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stopColor="#ee2a31" />
+          <stop offset="1" stopColor="#c4161d" />
+        </linearGradient>
+        <linearGradient id="pulse-word" x1="0" y1="185" x2="0" y2="295" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stopColor="#127a44" />
+          <stop offset="1" stopColor="#064f28" />
+        </linearGradient>
+        {/* The trace fades in from the left rather than starting abruptly. */}
+        <linearGradient id="pulse-ecg" x1="0" y1="0" x2="560" y2="0" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stopColor={RED} stopOpacity="0" />
+          <stop offset="0.13" stopColor={RED} stopOpacity="1" />
+          <stop offset="1" stopColor={RED} stopOpacity="1" />
+        </linearGradient>
+      </defs>
+
       <Caduceus />
 
       {/* Wordmark, split around the emblem which occupies the L slot */}
       <g
-        fill={dark ? '#ffffff' : GREEN}
+        fill={dark ? '#ffffff' : 'url(#pulse-word)'}
         fontFamily="Inter, ui-sans-serif, system-ui, sans-serif"
         fontWeight="800"
         fontSize="116"
@@ -172,15 +203,17 @@ export function PulseLockup({
         </text>
       </g>
 
-      {/* ECG trace across the wordmark, interrupted by the emblem */}
+      {/* ECG trace over the letters: fades in at the left, one complex at the
+          P/U junction and one over the S, ending in a solid terminator dot. */}
       <path
-        d="M24 252h89l12-44 16 78 12-50 10 16h76M340 252h34l12-44 16 78 12-50 10 16h116"
+        d="M12 252h92l13-56 10 114 11-72 9 30 7-16h74M332 252h6l13-56 10 114 11-72 9 30 7-16h124"
         fill="none"
-        stroke={RED}
+        stroke="url(#pulse-ecg)"
         strokeWidth="6.5"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
+      <circle cx="528" cy="252" r="9.5" fill={RED} />
     </svg>
   );
 }
