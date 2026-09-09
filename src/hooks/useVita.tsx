@@ -21,6 +21,8 @@ import {
   userIdForClinician,
   userIdForPatient,
 } from '@/data/platform';
+import { extractEntities } from '@/lib/clinicalNer';
+import { readDocument } from '@/lib/docReader';
 import { clockTime } from '@/lib/format';
 import type {
   AuditAction,
@@ -135,7 +137,6 @@ interface VitaContextValue {
   /** Returns what was rejected so the UI can say why, rather than failing silently. */
   addUploads: (files: File[]) => { accepted: number; rejected: { name: string; why: string }[] };
   removeUpload: (id: string) => void;
-  markUploadsProcessed: () => void;
 
   /** Legacy flag used by Emergency Mode to mark the surface active. */
   emergencyActive: boolean;
@@ -510,14 +511,64 @@ export function VitaProvider({ children }: { children: ReactNode }) {
   const ACCEPTED = ['application/pdf', 'image/png', 'image/jpeg', 'image/webp'];
   const MAX_MB = 25;
 
+  /** Patch one upload in place, by id. */
+  const patchUpload = useCallback((id: string, patch: Partial<UploadedFile>) => {
+    setUploads((prev) => prev.map((u) => (u.id === id ? { ...u, ...patch } : u)));
+  }, []);
+
+  /**
+   * Read a file for real: pdf.js text layer or Tesseract OCR, then clinical
+   * extraction over whatever text actually came back. Every step reports
+   * progress, and a failure is recorded as a failure rather than smoothed over.
+   */
+  const processUpload = useCallback(
+    async (id: string, file: File, name: string) => {
+      patchUpload(id, { status: 'reading', progress: { stage: 'Opening file', pct: 2 } });
+
+      const read = await readDocument(file, (stage, pct) =>
+        patchUpload(id, { progress: { stage, pct: Math.round(pct) } }),
+      );
+
+      if (read.error || read.pages.length === 0) {
+        patchUpload(id, {
+          status: 'failed',
+          progress: undefined,
+          readError: read.error ?? 'No readable text found in this document.',
+          readMethod: read.method,
+        });
+        logAudit('export', `Could not read ${name}: ${read.error ?? 'no readable text'}.`);
+        return;
+      }
+
+      patchUpload(id, { progress: { stage: 'Extracting clinical entities', pct: 92 } });
+      const ner = extractEntities(read.pages, read.confidence);
+
+      patchUpload(id, {
+        status: 'read',
+        progress: undefined,
+        pages: read.pages,
+        readMethod: read.method,
+        readConfidence: read.confidence,
+        entities: ner.entities,
+        acceptedCount: ner.accepted.length,
+        withheldCount: ner.withheld.length,
+        meanConfidence: ner.meanConfidence,
+      });
+
+      logAudit(
+        'export',
+        `${name} read via ${read.method}. ${ner.accepted.length} entities accepted, ${ner.withheld.length} withheld below threshold, across ${read.pages.length} page${read.pages.length === 1 ? '' : 's'}.`,
+      );
+    },
+    [patchUpload, logAudit],
+  );
+
   const addUploads = useCallback(
     (files: File[]) => {
       const rejected: { name: string; why: string }[] = [];
-      const accepted: UploadedFile[] = [];
+      const accepted: { record: UploadedFile; file: File }[] = [];
 
       for (const f of files) {
-        // Extension fallback: some browsers report an empty type for PDFs
-        // dragged from certain file managers.
         const byExt = /.(pdf|png|jpe?g|webp)$/i.test(f.name);
         if (!ACCEPTED.includes(f.type) && !byExt) {
           rejected.push({ name: f.name, why: 'Not a PDF or image' });
@@ -527,47 +578,38 @@ export function VitaProvider({ children }: { children: ReactNode }) {
           rejected.push({ name: f.name, why: `Larger than ${MAX_MB} MB` });
           continue;
         }
+        const isPdf = f.type === 'application/pdf' || /.pdf$/i.test(f.name);
         accepted.push({
-          id: uid('upl'),
-          name: f.name,
-          sizeKb: Math.max(1, Math.round(f.size / 1024)),
-          mime: f.type || (/.pdf$/i.test(f.name) ? 'application/pdf' : 'image/*'),
-          kind: f.type === 'application/pdf' || /.pdf$/i.test(f.name) ? 'pdf' : 'image',
-          addedAt: stamp(),
-          status: 'queued',
+          file: f,
+          record: {
+            id: uid('upl'),
+            name: f.name,
+            sizeKb: Math.max(1, Math.round(f.size / 1024)),
+            mime: f.type || (isPdf ? 'application/pdf' : 'image/*'),
+            kind: isPdf ? 'pdf' : 'image',
+            addedAt: stamp(),
+            status: 'queued',
+          },
         });
       }
 
       if (accepted.length) {
-        setUploads((prev) => [...accepted, ...prev]);
-        logAudit(
-          'export',
-          `${accepted.length} document${accepted.length === 1 ? '' : 's'} added by the patient: ${accepted
-            .map((a) => a.name)
-            .join(', ')}. Queued for processing.`,
-        );
+        setUploads((prev) => [...accepted.map((a) => a.record), ...prev]);
+        // Sequential on purpose: OCR is CPU-bound, and parallel workers make
+        // the whole batch slower and the progress readout meaningless.
+        void (async () => {
+          for (const a of accepted) await processUpload(a.record.id, a.file, a.record.name);
+        })();
       }
       return { accepted: accepted.length, rejected };
     },
-    [logAudit],
+    [processUpload],
   );
 
   const removeUpload = useCallback((id: string) => {
     setUploads((prev) => prev.filter((u) => u.id !== id));
   }, []);
 
-  const markUploadsProcessed = useCallback(() => {
-    setUploads((prev) =>
-      prev.map((u) =>
-        u.status === 'processed'
-          ? u
-          : // A stand-in count. The prototype has no document AI, so this is
-            // derived from file size rather than from anything on the page,
-            // and the UI labels it as simulated wherever it appears.
-            { ...u, status: 'processed' as const, simulatedExtraction: Math.max(3, Math.round(u.sizeKb / 40)) },
-      ),
-    );
-  }, []);
 
   const audit = useMemo(() => [...sessionAudit, ...seedAudit], [sessionAudit]);
 
@@ -602,7 +644,6 @@ export function VitaProvider({ children }: { children: ReactNode }) {
       uploads,
       addUploads,
       removeUpload,
-      markUploadsProcessed,
       emergencyActive,
       setEmergencyActive,
     }),
@@ -635,7 +676,6 @@ export function VitaProvider({ children }: { children: ReactNode }) {
       uploads,
       addUploads,
       removeUpload,
-      markUploadsProcessed,
       emergencyActive,
     ],
   );

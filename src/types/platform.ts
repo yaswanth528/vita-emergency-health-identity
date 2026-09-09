@@ -166,13 +166,13 @@ export interface AppNotification {
 /* --- Uploads ------------------------------------------------------------------ */
 
 /**
- * A file the user actually chose from their machine.
+ * A file the user chose, and what reading it produced.
  *
- * Only real metadata is recorded — name, size, type. The prototype has no
- * document AI behind it, so nothing here ever claims to know what is *inside*
- * the file. `simulatedExtraction` is named the way it is on purpose: the UI
- * must be able to say "this number is a stand-in" rather than quietly implying
- * the page was read.
+ * The file itself is held in memory so it can be re-read; it is not persisted.
+ * `pages` is the actual text pulled out of the document — by pdf.js for a text
+ * layer, or by Tesseract for a scan — and every entity below points at a real
+ * offset inside it. Nothing in this record is invented: if the document could
+ * not be read, `readError` says why and there are no entities.
  */
 export interface UploadedFile {
   id: string;
@@ -181,6 +181,17 @@ export interface UploadedFile {
   mime: string;
   kind: 'pdf' | 'image';
   addedAt: string;
-  status: 'queued' | 'processed';
-  simulatedExtraction?: number;
+  status: 'queued' | 'reading' | 'read' | 'failed';
+  /** Live progress while the reader works. */
+  progress?: { stage: string; pct: number };
+  /** The real extracted text, one entry per page. */
+  pages?: string[];
+  readMethod?: import('@/lib/docReader').ReadMethod;
+  /** OCR mean word confidence, or 99 for an exact text layer. */
+  readConfidence?: number;
+  readError?: string;
+  entities?: import('@/lib/clinicalNer').NerEntity[];
+  acceptedCount?: number;
+  withheldCount?: number;
+  meanConfidence?: number;
 }

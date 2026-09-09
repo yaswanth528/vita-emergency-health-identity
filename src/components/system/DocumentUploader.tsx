@@ -1,24 +1,33 @@
-import { CloudUpload, FileImage, FileText, Info, TriangleAlert, X } from 'lucide-react';
+import {
+  Ban,
+  ChevronDown,
+  CloudUpload,
+  FileImage,
+  FileText,
+  Loader2,
+  ScanLine,
+  TriangleAlert,
+  X,
+} from 'lucide-react';
 import { useRef, useState } from 'react';
-import { Badge, Button, Card, FieldLabel } from '@/components/ui';
+import { Badge, Button, Card, FieldLabel, Progress } from '@/components/ui';
+import { ACCEPTANCE_THRESHOLD, nerTypeLabel } from '@/lib/clinicalNer';
+import { readMethodLabel } from '@/lib/docReader';
 import { useVita } from '@/hooks/useVita';
 import { fileSize } from '@/lib/format';
 import { cn } from '@/lib/utils';
+import type { UploadedFile } from '@/types/platform';
 
 /* ============================================================================
    DocumentUploader
    ----------------------------------------------------------------------------
-   A real uploader: a hidden file input for click-to-browse, drag-and-drop for
-   the obvious gesture, type and size validation, and a visible reason whenever
-   a file is turned away.
+   Click-to-browse, drag-and-drop, validation with reasons — and the file is
+   genuinely read: pdf.js for a text layer, Tesseract for a scan, then clinical
+   extraction over the characters that actually came out.
 
-   What it deliberately does NOT do is pretend to read the file. There is no
-   document AI behind this prototype, so an uploaded PDF contributes its real
-   metadata — name, size, type — and nothing else. Every number derived from it
-   is labelled as simulated at the point it is displayed.
-
-   Claiming to have extracted "18 medical entities" from a file nobody parsed
-   would be exactly the behaviour this product exists to argue against.
+   Every entity below is shown with the real line it was found on. That is the
+   point: provenance for a document the user supplied five seconds ago is the
+   same kind of object as provenance for the prepared demo set.
    ========================================================================== */
 
 export function DocumentUploader() {
@@ -29,11 +38,8 @@ export function DocumentUploader() {
 
   const take = (list: FileList | null) => {
     if (!list || list.length === 0) return;
-    const result = addUploads(Array.from(list));
-    setRejected(result.rejected);
+    setRejected(addUploads(Array.from(list)).rejected);
   };
-
-  const queued = uploads.filter((u) => u.status === 'queued');
 
   return (
     <div className="space-y-3">
@@ -45,13 +51,10 @@ export function DocumentUploader() {
         className="sr-only"
         onChange={(e) => {
           take(e.target.files);
-          // Reset so choosing the same file twice still fires a change event.
-          e.target.value = '';
+          e.target.value = ''; // so the same file can be chosen twice
         }}
       />
 
-      {/* The drop zone is a real button so it is keyboard-reachable, not just
-          a div that happens to respond to a click. */}
       <button
         type="button"
         onClick={() => inputRef.current?.click()}
@@ -77,11 +80,11 @@ export function DocumentUploader() {
             className={cn('size-6 transition-colors', dragging ? 'text-accent-600' : 'text-ink-300')}
           />
           <p className="mt-3 text-[14px] font-medium text-ink-800">
-            {dragging ? 'Drop to add' : 'Drop files here, or click to browse'}
+            {dragging ? 'Drop to read' : 'Drop files here, or click to browse'}
           </p>
           <p className="mt-1.5 max-w-md text-[12.5px] leading-relaxed text-ink-500">
-            Prescriptions, discharge summaries, lab reports or photographs of handwritten scripts.
-            PDF, PNG, JPG or WebP, up to 25 MB each.
+            PDFs are read from their text layer. Photographs and scans go through OCR in your
+            browser — the file never leaves this device. Up to 25 MB each.
           </p>
         </div>
       </button>
@@ -114,75 +117,226 @@ export function DocumentUploader() {
       )}
 
       {uploads.length > 0 && (
-        <div>
-          <FieldLabel className="mb-2">
-            Your uploads · {queued.length} queued, {uploads.length - queued.length} processed
-          </FieldLabel>
-          <ul className="space-y-2">
-            {uploads.map((u) => (
-              <li
-                key={u.id}
-                className="flex items-center gap-3 rounded-md border border-line bg-white px-3.5 py-2.5"
-              >
-                <span className="flex size-8 shrink-0 items-center justify-center rounded-md border border-line bg-canvas-sunk text-ink-500">
-                  {u.kind === 'pdf' ? (
-                    <FileText className="size-3.5" />
-                  ) : (
-                    <FileImage className="size-3.5" />
-                  )}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate font-mono text-[12.5px] font-medium text-ink-900">
-                    {u.name}
-                  </p>
-                  <p className="mt-0.5 font-mono text-[10.5px] text-ink-400">
-                    {fileSize(u.sizeKb)} · added {u.addedAt}
-                  </p>
-                </div>
-                <Badge tone={u.status === 'processed' ? 'verified' : 'caution'}>
-                  {u.status === 'processed' ? 'Processed' : 'Queued'}
-                </Badge>
-                <button
-                  onClick={() => removeUpload(u.id)}
-                  aria-label={`Remove ${u.name}`}
-                  className="shrink-0 rounded-md p-1.5 text-ink-400 transition-colors hover:bg-ink-50 hover:text-critical-600"
-                >
-                  <X className="size-3.5" />
-                </button>
-              </li>
-            ))}
-          </ul>
+        <div className="space-y-2.5">
+          <FieldLabel>Your documents</FieldLabel>
+          {uploads.map((u) => (
+            <UploadRow key={u.id} upload={u} onRemove={() => removeUpload(u.id)} />
+          ))}
         </div>
-      )}
-
-      {uploads.length > 0 && (
-        <Card accent="caution" className="hatch-caution">
-          <div className="flex items-start gap-2.5">
-            <Info className="mt-0.5 size-4 shrink-0 text-caution-600" />
-            <div>
-              <p className="text-[13px] font-semibold text-ink-900">
-                Your file is not actually read in this prototype
-              </p>
-              <p className="mt-1.5 max-w-2xl text-[12.5px] leading-relaxed text-ink-600">
-                PULSE records what it genuinely knows about your upload — its name, size and type —
-                and stops there. There is no document AI behind this build, so nothing claims to
-                have parsed the page. The pipeline below runs against the eight prepared source
-                documents; any count shown against your own file is a stand-in and is labelled as
-                one. Wiring in a real extractor means replacing four functions in{' '}
-                <code className="rounded-xs bg-canvas-sunk px-1 py-0.5 font-mono text-[11.5px]">
-                  lib/aiService.ts
-                </code>
-                , not changing this screen.
-              </p>
-            </div>
-          </div>
-        </Card>
       )}
     </div>
   );
 }
 
-/** Small variant for the documents page. */
+/* --- One uploaded document --------------------------------------------------- */
+
+function UploadRow({ upload: u, onRemove }: { upload: UploadedFile; onRemove: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [showText, setShowText] = useState(false);
+
+  const accepted = (u.entities ?? []).filter((e) => e.confidence >= ACCEPTANCE_THRESHOLD);
+  const withheld = (u.entities ?? []).filter((e) => e.confidence < ACCEPTANCE_THRESHOLD);
+
+  return (
+    <Card
+      padded={false}
+      accent={u.status === 'failed' ? 'critical' : u.status === 'read' ? 'verified' : 'none'}
+      className="overflow-hidden"
+    >
+      <div className="flex items-center gap-3 px-4 py-3">
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-md border border-line bg-canvas-sunk text-ink-500">
+          {u.kind === 'pdf' ? <FileText className="size-4" /> : <FileImage className="size-4" />}
+        </span>
+
+        <div className="min-w-0 flex-1">
+          <p className="truncate font-mono text-[12.5px] font-medium text-ink-900">{u.name}</p>
+          <p className="mt-0.5 font-mono text-[10.5px] text-ink-400">
+            {fileSize(u.sizeKb)} · added {u.addedAt}
+            {u.readMethod && ` · ${readMethodLabel[u.readMethod]}`}
+            {u.pages && ` · ${u.pages.length} page${u.pages.length === 1 ? '' : 's'}`}
+          </p>
+        </div>
+
+        {u.status === 'read' && (
+          <>
+            <Badge tone="verified">{accepted.length} entities</Badge>
+            {withheld.length > 0 && <Badge tone="caution">{withheld.length} withheld</Badge>}
+            <button
+              onClick={() => setOpen((o) => !o)}
+              className="inline-flex items-center gap-1 rounded-md border border-line-strong px-2 py-1 text-[11.5px] font-medium text-ink-600 transition-colors hover:border-ink-300"
+            >
+              {open ? 'Hide' : 'What was read'}
+              <ChevronDown className={cn('size-3 transition-transform', open && 'rotate-180')} />
+            </button>
+          </>
+        )}
+        {u.status === 'failed' && <Badge tone="critical">Could not read</Badge>}
+        {(u.status === 'reading' || u.status === 'queued') && (
+          <Badge tone="neutral">
+            <Loader2 className="size-2.5 animate-spin" />
+            {u.status === 'queued' ? 'Queued' : 'Reading'}
+          </Badge>
+        )}
+
+        <button
+          onClick={onRemove}
+          aria-label={`Remove ${u.name}`}
+          className="shrink-0 rounded-md p-1.5 text-ink-400 transition-colors hover:bg-ink-50 hover:text-critical-600"
+        >
+          <X className="size-3.5" />
+        </button>
+      </div>
+
+      {/* Live progress */}
+      {u.progress && (
+        <div className="border-t border-line px-4 py-2.5">
+          <div className="flex items-center justify-between">
+            <span className="font-mono text-[11px] capitalize text-ink-500">{u.progress.stage}</span>
+            <span className="font-mono text-[11px] tabular-nums text-ink-400">
+              {u.progress.pct}%
+            </span>
+          </div>
+          <Progress value={u.progress.pct} tone="accent" className="mt-1.5" />
+        </div>
+      )}
+
+      {/* Failure — stated, not glossed */}
+      {u.status === 'failed' && (
+        <div className="border-t border-critical-100 bg-critical-50/60 px-4 py-3">
+          <p className="text-[12.5px] leading-relaxed text-ink-700">{u.readError}</p>
+          <p className="mt-1.5 text-[11.5px] text-ink-500">
+            No entities were produced from this file. Nothing has been added to the health graph.
+          </p>
+        </div>
+      )}
+
+      {/* What was actually read */}
+      {u.status === 'read' && open && (
+        <div className="border-t border-line bg-canvas-sunk/40 px-4 py-3.5">
+          <dl className="mb-3 flex flex-wrap gap-x-8 gap-y-2">
+            <Stat label="Read via" value={u.readMethod ? readMethodLabel[u.readMethod] : '—'} />
+            <Stat
+              label={u.readMethod === 'pdf-text' ? 'Text fidelity' : 'OCR confidence'}
+              value={`${u.readConfidence ?? 0}%`}
+            />
+            <Stat label="Mean entity confidence" value={`${u.meanConfidence ?? 0}%`} />
+            <Stat label="Accepted / withheld" value={`${accepted.length} / ${withheld.length}`} />
+          </dl>
+
+          {accepted.length === 0 && withheld.length === 0 && (
+            <p className="rounded-md border border-line bg-white px-3.5 py-3 text-[12.5px] leading-relaxed text-ink-600">
+              The document was read successfully, but nothing in it matched a clinical entity this
+              extractor recognises. That is a real result, not an error — the text is below if you
+              want to check it.
+            </p>
+          )}
+
+          {accepted.length > 0 && (
+            <EntityList
+              title={`Accepted — written to the health graph`}
+              entities={accepted}
+              tone="ok"
+            />
+          )}
+
+          {withheld.length > 0 && (
+            <div className="mt-3">
+              <div className="hatch-caution mb-2 rounded-md border border-caution-100 bg-caution-50/60 px-3 py-2">
+                <p className="flex items-start gap-2 text-[11.5px] leading-snug text-ink-600">
+                  <Ban className="mt-px size-3 shrink-0 text-caution-600" />
+                  Below the {ACCEPTANCE_THRESHOLD}% acceptance threshold. Flagged for review, not
+                  written into the graph — a guessed dose is worse than an admitted gap.
+                </p>
+              </div>
+              <EntityList title="Withheld" entities={withheld} tone="warn" />
+            </div>
+          )}
+
+          <button
+            onClick={() => setShowText((v) => !v)}
+            className="mt-3 inline-flex items-center gap-1.5 text-[12px] font-medium text-accent-600 hover:underline"
+          >
+            <ScanLine className="size-3" />
+            {showText ? 'Hide extracted text' : 'Show the text that was extracted'}
+          </button>
+
+          {showText && (
+            <pre className="mt-2 max-h-[280px] overflow-auto rounded-md border border-line bg-white px-3 py-3 font-mono text-[11px] leading-[1.7] text-ink-600">
+              {(u.pages ?? []).map((page, i) => (
+                <div key={i}>
+                  {u.pages!.length > 1 && (
+                    <div className="mb-1 mt-3 first:mt-0 text-[10px] uppercase tracking-wider text-ink-400">
+                      Page {i + 1}
+                    </div>
+                  )}
+                  <div className="whitespace-pre-wrap">{page || '(no text on this page)'}</div>
+                </div>
+              ))}
+            </pre>
+          )}
+        </div>
+      )}
+    </Card>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <dt className="label-xs text-ink-400">{label}</dt>
+      <dd className="mt-1 font-mono text-[12.5px] font-medium text-ink-900">{value}</dd>
+    </div>
+  );
+}
+
+function EntityList({
+  title,
+  entities,
+  tone,
+}: {
+  title: string;
+  entities: NonNullable<UploadedFile['entities']>;
+  tone: 'ok' | 'warn';
+}) {
+  return (
+    <div>
+      <FieldLabel className="mb-1.5">{title}</FieldLabel>
+      <ul className="space-y-1.5">
+        {entities.map((e) => (
+          <li
+            key={e.id}
+            className="rounded-md border border-line bg-white px-3 py-2"
+          >
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge tone={tone === 'ok' ? 'neutral' : 'caution'}>{nerTypeLabel[e.type]}</Badge>
+              <span className="text-[13px] font-semibold text-ink-900">{e.normalised}</span>
+              {e.coding && (
+                <Badge tone="accent" mono>
+                  {e.coding.system} {e.coding.code}
+                </Badge>
+              )}
+              <span
+                className={cn(
+                  'ml-auto font-mono text-[11.5px] font-semibold tabular-nums',
+                  tone === 'ok' ? 'text-ink-700' : 'text-caution-600',
+                )}
+              >
+                {e.confidence}%
+              </span>
+            </div>
+            {/* The real line from the real document — this is the provenance. */}
+            <p className="mt-1.5 truncate font-mono text-[10.5px] text-ink-400">
+              page {e.page}, line {e.lineIndex + 1} · “{e.line.trim()}”
+            </p>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+/* --- Compact button for the documents page ------------------------------------ */
+
 export function UploadButton() {
   const { addUploads } = useVita();
   const inputRef = useRef<HTMLInputElement>(null);

@@ -24,7 +24,7 @@ import { fileSize } from '@/lib/format';
 export default function Ingest() {
   const [ran, setRan] = useState(false);
   const conflicts = useOpenConflicts();
-  const { openConflict, markUploadsProcessed } = useVita();
+  const { openConflict } = useVita();
 
   return (
     <>
@@ -80,12 +80,7 @@ export default function Ingest() {
             description="Each stage reports countable output. If a number here is unimpressive, that is information too."
           />
           <div className="mt-4">
-            <AIProcessing
-              onComplete={() => {
-                setRan(true);
-                markUploadsProcessed();
-              }}
-            />
+            <AIProcessing onComplete={() => setRan(true)} />
           </div>
         </section>
 

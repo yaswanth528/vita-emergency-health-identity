@@ -25,7 +25,8 @@ npm run build      # production build
 npm run typecheck  # tsc --noEmit
 ```
 
-Stack: React 19 · TypeScript · Vite · Tailwind v4 · react-router · framer-motion.
+Stack: React 19 · TypeScript · Vite · Tailwind v4 · react-router · framer-motion ·
+pdf.js and Tesseract.js (both lazy-loaded, only when a document is actually read).
 
 ---
 
@@ -53,6 +54,7 @@ seconds. It does not diagnose, recommend treatment, or alter a medication record
 | **Structure** | 41 typed entities extracted from 8 documents, bound to RxNorm / SNOMED-CT / LOINC / ICD-10 |
 | **Reconciliation** | 6 medication records collapsed into 4 active agents; 2 dose changes ordered over time |
 | **Provenance** | 35 evidence links — every clinical value resolves to a document, page, excerpt and confidence |
+| **Real reading** | Upload a PDF or a photo and it is genuinely parsed in your browser — pdf.js text layer, or Tesseract OCR — then extracted, with every entity citing the actual line |
 | **Restraint** | 2 conflicts surfaced and held for clinician verification · **0 values auto-resolved** · 2 low-confidence extractions withheld from the health graph rather than guessed |
 
 ### Provenance is a type constraint, not a convention
@@ -79,6 +81,24 @@ Two prescriptions disagree about the atorvastatin dose — 10 mg in May, 20 mg i
 shows both and stops. There is no recency rule, no confidence tie-break, no
 specialist-authority heuristic, and deliberately no `resolvedValue` produced by the system.
 A clinician records the decision, and their name goes on it in the audit trail.
+
+### Uploads are actually read
+
+The drop zone on **AI processing** takes real files. A PDF with a text layer is parsed by pdf.js;
+a photograph or a scanned PDF is rasterised and passed through Tesseract OCR. Both run entirely in
+the browser — the file never leaves the device.
+
+Clinical extraction then runs over the characters that actually came out:
+medications against an RxNorm-coded dictionary, doses, Indian prescription frequency shorthand
+(`1-0-1`, `OD`, `HS`), conditions bound to ICD-10, analytes to LOINC, vitals, allergies and dates.
+Every entity records its page, line index and character offset, so provenance for a file uploaded
+five seconds ago is the same kind of object as provenance for the prepared demo set.
+
+It is pattern-and-dictionary extraction, not a language model, and the code says so. It reads the
+text; it does not understand it. Confidence is derived — an exact dictionary hit scores higher than
+a bare regex, and everything is scaled by Tesseract's own word confidence when OCR was involved.
+Anything under the 85% threshold is withheld rather than asserted, exactly as with the prepared set.
+When a file cannot be read, it is marked failed with the reason; nothing is invented to fill the gap.
 
 ### The audit trail is live
 
