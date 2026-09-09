@@ -7,7 +7,7 @@ import { Badge, Button, Card, FieldLabel, SectionHeader, buttonClasses } from '@
 import { PageBody, PageHeader } from '@/layouts/AppShell';
 import { activeMedications } from '@/data/clinical';
 import { consentGrants } from '@/data/consent';
-import { anaya } from '@/data/patient';
+import { kavita } from '@/data/patient';
 import { timeline } from '@/data/timeline';
 import { useVita } from '@/hooks/useVita';
 
@@ -26,7 +26,7 @@ import { useVita } from '@/hooks/useVita';
    ========================================================================== */
 
 export default function Caregiver() {
-  const grant = consentGrants.find((g) => g.id === 'csn-kiran-caregiver')!;
+  const grant = consentGrants.find((g) => g.id === 'csn-rohan-caregiver')!;
   const { logAudit } = useVita();
   const [shared, setShared] = useState(false);
 
@@ -34,8 +34,8 @@ export default function Caregiver() {
     <>
       <PageHeader
         eyebrow="Caregiver"
-        title="Kiran Sharma"
-        description={`Delegated access to ${anaya.fullName}'s record, granted ${grant.grantedAt}. Revocable by the patient at any time.`}
+        title="Rohan Menon"
+        description={`Delegated access to ${kavita.fullName}'s record, granted ${grant.grantedAt}. Revocable by the patient at any time.`}
         actions={
           <Link to="/emergency" className={buttonClasses({ variant: 'critical' })}>
             <Siren className="size-[15px]" />
@@ -175,7 +175,7 @@ export default function Caregiver() {
                 Caregiver access is delegated, not owned
               </h3>
               <p className="mt-1.5 max-w-3xl text-[12.5px] leading-relaxed text-ink-500">
-                {anaya.fullName} can see everything you have viewed, in the same audit trail that
+                {kavita.fullName} can see everything you have viewed, in the same audit trail that
                 records clinician access, and can revoke this grant at any time from her consent
                 settings. Delegation that cannot be inspected or withdrawn is not delegation.
               </p>

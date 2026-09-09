@@ -1,10 +1,10 @@
 import type { Patient } from '@/types';
 
 /** The demo patient. Everything else in `/data` hangs off this record. */
-export const anaya: Patient = {
+export const kavita: Patient = {
   id: 'pt-4491',
-  fullName: 'Anaya Sharma',
-  displayName: 'A. Sharma',
+  fullName: 'Kavita Menon',
+  displayName: 'K. Menon',
   dateOfBirth: '1968-02-11',
   age: 58,
   sex: 'Female',
@@ -17,7 +17,7 @@ export const anaya: Patient = {
   abhaMasked: '••-••••-••••-4491',
   identityVerified: true,
   identityMethods: ['abha-linked', 'hospital-mrn', 'biometric'],
-  photoInitials: 'AS',
+  photoInitials: 'KM',
   heightCm: 159,
   weightKg: 68,
   organDonor: true,
@@ -27,7 +27,7 @@ export const anaya: Patient = {
   sourceFreshnessDays: 21,
   emergencyContacts: [
     {
-      name: 'Kiran Sharma',
+      name: 'Rohan Menon',
       relationship: 'Son',
       phoneMasked: '+91 ••••• ••821',
       phone: '+91 98490 22821',
@@ -54,8 +54,8 @@ export const anaya: Patient = {
 export const otherPatients: Patient[] = [
   {
     id: 'pt-2210',
-    fullName: 'Fatima Begum',
-    displayName: 'F. Begum',
+    fullName: 'Zubeida Ansari',
+    displayName: 'Z. Ansari',
     dateOfBirth: '1955-06-30',
     age: 71,
     sex: 'Female',
@@ -68,14 +68,14 @@ export const otherPatients: Patient[] = [
     abhaMasked: '••-••••-••••-2210',
     identityVerified: true,
     identityMethods: ['abha-linked', 'govt-id'],
-    photoInitials: 'FB',
+    photoInitials: 'ZA',
     organDonor: false,
     primaryPhysician: 'Dr. S. Krishnan · Yashoda Nephrology',
     profileCompleteness: 74,
     sourceFreshnessDays: 46,
     emergencyContacts: [
       {
-        name: 'Imran Begum',
+        name: 'Faizan Ansari',
         relationship: 'Son',
         phoneMasked: '+91 ••••• ••114',
         phone: '+91 99590 11114',
@@ -85,8 +85,8 @@ export const otherPatients: Patient[] = [
   },
   {
     id: 'pt-7726',
-    fullName: 'Rohit Verma',
-    displayName: 'R. Verma',
+    fullName: 'Arjun Pillai',
+    displayName: 'A. Pillai',
     dateOfBirth: '1992-11-02',
     age: 34,
     sex: 'Male',
@@ -99,14 +99,14 @@ export const otherPatients: Patient[] = [
     abhaMasked: '••-••••-••••-7726',
     identityVerified: true,
     identityMethods: ['abha-linked'],
-    photoInitials: 'RV',
+    photoInitials: 'AP',
     organDonor: false,
     primaryPhysician: 'Not recorded',
     profileCompleteness: 22,
     sourceFreshnessDays: 402,
     emergencyContacts: [
       {
-        name: 'Sneha Verma',
+        name: 'Divya Pillai',
         relationship: 'Spouse',
         phoneMasked: '+91 ••••• ••673',
         phone: '+91 70320 55673',
@@ -116,8 +116,8 @@ export const otherPatients: Patient[] = [
   },
   {
     id: 'pt-9083',
-    fullName: 'Daniel Mathew',
-    displayName: 'D. Mathew',
+    fullName: 'Joseph Fernandes',
+    displayName: 'J. Fernandes',
     dateOfBirth: '1981-04-19',
     age: 45,
     sex: 'Male',
@@ -130,7 +130,7 @@ export const otherPatients: Patient[] = [
     abhaMasked: 'not linked',
     identityVerified: false,
     identityMethods: ['unverified'],
-    photoInitials: 'DM',
+    photoInitials: 'JF',
     organDonor: false,
     primaryPhysician: 'Not recorded',
     profileCompleteness: 9,
@@ -139,7 +139,7 @@ export const otherPatients: Patient[] = [
   },
 ];
 
-export const allPatients: Patient[] = [anaya, ...otherPatients];
+export const allPatients: Patient[] = [kavita, ...otherPatients];
 
 export const patientById = (id: string): Patient | undefined =>
   allPatients.find((p) => p.id === id);

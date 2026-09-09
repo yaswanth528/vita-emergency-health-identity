@@ -29,7 +29,7 @@ const ROLES = [
     id: 'patient',
     icon: UserRound,
     title: 'Patient',
-    org: 'Anaya Sharma · ABHA ••-••••-••••-4491',
+    org: 'Kavita Menon · ABHA ••-••••-••••-4491',
     detail:
       'Your longitudinal profile, your documents, and control over who can see them and for how long.',
     to: '/app/dashboard',
@@ -38,7 +38,7 @@ const ROLES = [
     id: 'caregiver',
     icon: UsersRound,
     title: 'Caregiver',
-    org: 'Kiran Sharma · delegated by patient',
+    org: 'Rohan Menon · delegated by patient',
     detail:
       'Scoped access to medications, appointments and the timeline. Can share emergency access, cannot administer consent.',
     to: '/app/caregiver',

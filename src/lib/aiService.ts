@@ -24,7 +24,7 @@ import { allergies, activeMedications, conditions, implants, medications } from 
 import { conflicts, openConflicts } from '@/data/conflicts';
 import { documents } from '@/data/documents';
 import { extractions } from '@/data/extractions';
-import { anaya, patientById } from '@/data/patient';
+import { kavita, patientById } from '@/data/patient';
 import { majorHistory, recentChanges, timeline } from '@/data/timeline';
 import type {
   AIExtraction,
@@ -127,7 +127,7 @@ export interface TimelineResult {
   edgeCount: number;
 }
 
-export async function buildHealthTimeline(_patientId: PatientId = anaya.id): Promise<TimelineResult> {
+export async function buildHealthTimeline(_patientId: PatientId = kavita.id): Promise<TimelineResult> {
   await latency(380);
   const sourceSystems = new Set(documents.map((d) => d.source)).size;
   const years = timeline.map((e) => Number(e.date.slice(0, 4)));
@@ -160,10 +160,10 @@ export async function buildHealthTimeline(_patientId: PatientId = anaya.id): Pro
  * Everything else is one tap away, not on the screen.
  */
 export async function generateEmergencySnapshot(
-  patientId: PatientId = anaya.id,
+  patientId: PatientId = kavita.id,
 ): Promise<EmergencySnapshot> {
   await latency(260);
-  const patient = patientById(patientId) ?? anaya;
+  const patient = patientById(patientId) ?? kavita;
 
   return {
     patientId: patient.id,

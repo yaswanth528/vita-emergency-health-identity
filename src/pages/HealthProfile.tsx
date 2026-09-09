@@ -23,7 +23,7 @@ import {
   medications,
   procedures,
 } from '@/data/clinical';
-import { anaya } from '@/data/patient';
+import { kavita } from '@/data/patient';
 import { recentChanges } from '@/data/timeline';
 import { useVita } from '@/hooks/useVita';
 import { formatDate, relativeAge } from '@/lib/format';
@@ -60,21 +60,21 @@ export default function HealthProfile() {
           <Card className="mt-4">
             <div className="flex flex-wrap items-start gap-6">
               <div className="flex size-16 shrink-0 items-center justify-center rounded-lg bg-ink-900 font-mono text-[19px] font-semibold text-white">
-                {anaya.photoInitials}
+                {kavita.photoInitials}
               </div>
               <div className="min-w-[200px] flex-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h3 className="text-[19px] font-semibold text-ink-900">{anaya.fullName}</h3>
+                  <h3 className="text-[19px] font-semibold text-ink-900">{kavita.fullName}</h3>
                   <Badge tone="verified">
                     <BadgeCheck className="size-3" />
                     Identity verified
                   </Badge>
                 </div>
                 <p className="mt-1 text-[13px] text-ink-500">
-                  {anaya.age} years · {anaya.sex} · born {formatDate(anaya.dateOfBirth)}
+                  {kavita.age} years · {kavita.sex} · born {formatDate(kavita.dateOfBirth)}
                 </p>
                 <div className="mt-3 flex flex-wrap gap-1.5">
-                  {anaya.identityMethods.map((m) => (
+                  {kavita.identityMethods.map((m) => (
                     <Badge key={m} mono>
                       {m}
                     </Badge>
@@ -82,18 +82,18 @@ export default function HealthProfile() {
                 </div>
               </div>
               <dl className="grid flex-1 grid-cols-2 gap-x-6 gap-y-3.5 sm:grid-cols-3">
-                <IdentityField label="Blood group" value={anaya.bloodGroup.value} strong />
-                <IdentityField label="ABHA" value={anaya.abhaMasked} mono />
-                <IdentityField label="Organ donor" value={anaya.organDonor ? 'Registered' : 'No'} />
+                <IdentityField label="Blood group" value={kavita.bloodGroup.value} strong />
+                <IdentityField label="ABHA" value={kavita.abhaMasked} mono />
+                <IdentityField label="Organ donor" value={kavita.organDonor ? 'Registered' : 'No'} />
                 <IdentityField
                   label="Height / weight"
-                  value={`${anaya.heightCm} cm · ${anaya.weightKg} kg`}
+                  value={`${kavita.heightCm} cm · ${kavita.weightKg} kg`}
                   icon={<Ruler className="size-3" />}
                 />
-                <IdentityField label="Primary physician" value={anaya.primaryPhysician} />
+                <IdentityField label="Primary physician" value={kavita.primaryPhysician} />
                 <IdentityField
                   label="Advance directive"
-                  value={anaya.advanceDirective ?? 'None recorded'}
+                  value={kavita.advanceDirective ?? 'None recorded'}
                 />
               </dl>
             </div>
@@ -269,7 +269,7 @@ export default function HealthProfile() {
             title="Emergency information"
           />
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            {anaya.emergencyContacts.map((c) => (
+            {kavita.emergencyContacts.map((c) => (
               <Card key={c.phone}>
                 <FieldLabel>
                   {c.isCaregiver ? 'Emergency contact · caregiver' : 'Emergency contact'}

@@ -192,11 +192,11 @@ function HeroCard() {
       <div className="space-y-2.5 p-4">
         <div className="flex items-center gap-2.5">
           <div className="flex size-8 items-center justify-center rounded-md border border-ink-700 bg-ink-850 font-mono text-[11px] font-semibold text-ink-200">
-            AS
+            KM
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-1.5">
-              <span className="text-[13.5px] font-semibold text-white">A. Sharma</span>
+              <span className="text-[13.5px] font-semibold text-white">K. Menon</span>
               <span className="inline-flex items-center gap-0.5 rounded-sm border border-verified-500/40 bg-verified-500/10 px-1 py-[2px] text-[9px] font-semibold uppercase tracking-wider text-verified-300">
                 <BadgeCheck className="size-2.5" />
                 Verified

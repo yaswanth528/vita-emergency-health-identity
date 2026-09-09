@@ -17,7 +17,7 @@ import { PageBody, PageHeader } from '@/layouts/AppShell';
 import { activeMedications, allergies, conditions } from '@/data/clinical';
 import { activeGrants } from '@/data/consent';
 import { documents } from '@/data/documents';
-import { anaya } from '@/data/patient';
+import { kavita } from '@/data/patient';
 import { timeline } from '@/data/timeline';
 import { useOpenConflicts, useVita } from '@/hooks/useVita';
 import { formatDate, relativeAge } from '@/lib/format';
@@ -39,7 +39,7 @@ export default function Dashboard() {
     <>
       <PageHeader
         eyebrow="Patient"
-        title={`Good morning, ${anaya.fullName.split(' ')[0]}`}
+        title={`Good morning, ${kavita.fullName.split(' ')[0]}`}
         description="Your longitudinal health profile is assembled from every linked source. You control who can see it, and for how long."
         actions={
           <>
@@ -60,13 +60,13 @@ export default function Dashboard() {
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <StatusCard
             label="Profile completeness"
-            value={`${anaya.profileCompleteness}%`}
+            value={`${kavita.profileCompleteness}%`}
             sub={`${documents.length} sources linked`}
-            progress={anaya.profileCompleteness}
+            progress={kavita.profileCompleteness}
           />
           <StatusCard
             label="Source freshness"
-            value={`${anaya.sourceFreshnessDays} days`}
+            value={`${kavita.sourceFreshnessDays} days`}
             sub={`Latest ${formatDate('2026-08-19')}`}
             tone="verified"
           />
@@ -155,20 +155,20 @@ export default function Dashboard() {
                   <Card>
                     <FieldLabel>Blood group</FieldLabel>
                     <div className="mt-1.5 text-[28px] font-semibold leading-none text-ink-900">
-                      {anaya.bloodGroup.value}
+                      {kavita.bloodGroup.value}
                     </div>
                     <div className="mt-3">
-                      <EvidenceBadge fact={anaya.bloodGroup} claimLabel="Blood group" />
+                      <EvidenceBadge fact={kavita.bloodGroup} claimLabel="Blood group" />
                     </div>
                   </Card>
                   <Card>
                     <FieldLabel>Emergency contact</FieldLabel>
                     <div className="mt-1.5 text-[15px] font-semibold text-ink-900">
-                      {anaya.emergencyContacts[0].name}
+                      {kavita.emergencyContacts[0].name}
                     </div>
                     <p className="mt-0.5 text-[12.5px] text-ink-500">
-                      {anaya.emergencyContacts[0].relationship} ·{' '}
-                      {anaya.emergencyContacts[0].phoneMasked}
+                      {kavita.emergencyContacts[0].relationship} ·{' '}
+                      {kavita.emergencyContacts[0].phoneMasked}
                     </p>
                     <Link
                       to="/app/caregiver"

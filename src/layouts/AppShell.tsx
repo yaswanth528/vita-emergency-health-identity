@@ -17,7 +17,7 @@ import { useState } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import { Badge } from '@/components/ui';
 import { Wordmark } from '@/components/system/Wordmark';
-import { anaya } from '@/data/patient';
+import { kavita } from '@/data/patient';
 import { useOpenConflicts } from '@/hooks/useVita';
 import { cn } from '@/lib/utils';
 
@@ -143,23 +143,23 @@ function SidebarBody({ onNavigate }: { onNavigate?: () => void }) {
       <div className="rounded-lg border border-line bg-white p-3 shadow-card">
         <div className="flex items-center gap-2.5">
           <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-ink-900 font-mono text-[11px] font-semibold text-white">
-            {anaya.photoInitials}
+            {kavita.photoInitials}
           </div>
           <div className="min-w-0">
-            <p className="truncate text-[13px] font-semibold text-ink-900">{anaya.fullName}</p>
+            <p className="truncate text-[13px] font-semibold text-ink-900">{kavita.fullName}</p>
             <p className="truncate font-mono text-[10.5px] text-ink-400">
-              {anaya.age} {anaya.sex.charAt(0)} · {anaya.abhaMasked}
+              {kavita.age} {kavita.sex.charAt(0)} · {kavita.abhaMasked}
             </p>
           </div>
         </div>
         <div className="mt-2.5 flex items-center justify-between">
           <span className="label-xs text-ink-400">Profile</span>
           <span className="font-mono text-[11px] font-medium text-ink-700">
-            {anaya.profileCompleteness}%
+            {kavita.profileCompleteness}%
           </span>
         </div>
         <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-ink-100">
-          <div className="h-full rounded-full bg-ink-800" style={{ width: `${anaya.profileCompleteness}%` }} />
+          <div className="h-full rounded-full bg-ink-800" style={{ width: `${kavita.profileCompleteness}%` }} />
         </div>
       </div>
 

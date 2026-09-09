@@ -15,7 +15,7 @@ import { PageBody, PageHeader } from '@/layouts/AppShell';
 import { evidenceCount } from '@/data/evidence';
 import { documents } from '@/data/documents';
 import { extractions, rejectedExtractions } from '@/data/extractions';
-import { anaya } from '@/data/patient';
+import { kavita } from '@/data/patient';
 import { useVita } from '@/hooks/useVita';
 import { CONFIDENCE_THRESHOLD } from '@/lib/aiService';
 
@@ -47,7 +47,7 @@ export default function Settings() {
               icon={<Fingerprint className="size-4" />}
               title="Identity verified"
               status="Active"
-              detail={`Linked via ${anaya.identityMethods.join(', ')}. Clinical context is not released against an unverified identity.`}
+              detail={`Linked via ${kavita.identityMethods.join(', ')}. Clinical context is not released against an unverified identity.`}
             />
             <Posture
               icon={<ShieldCheck className="size-4" />}
