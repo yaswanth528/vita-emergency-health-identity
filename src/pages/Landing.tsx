@@ -749,7 +749,7 @@ function Vision() {
     <section className="border-b border-line bg-canvas">
       <div className="mx-auto max-w-[1180px] px-5 py-20 sm:px-8 sm:py-28">
         <motion.div {...fadeUp} className="mx-auto max-w-2xl text-center">
-          <PulseLockup className="mb-9" />
+          <PulseLockup className="mx-auto mb-9" />
           <div className="label-xs text-ink-400">The vision</div>
           <h2 className="mt-5 text-[32px] font-semibold leading-[1.15] tracking-[-0.03em] text-ink-900 sm:text-[42px]">
             One trusted health identity.
