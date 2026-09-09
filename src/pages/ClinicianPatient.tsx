@@ -16,7 +16,6 @@ import { AllergyAlert, ConditionCard, MedicationCard } from '@/components/clinic
 import { Timeline } from '@/components/clinical/Timeline';
 import { EvidenceBadge } from '@/components/evidence/EvidenceBadge';
 import { Badge, Card, EmptyState, FieldLabel, SectionHeader, buttonClasses } from '@/components/ui';
-import { Wordmark } from '@/components/system/Wordmark';
 import { documents } from '@/data/documents';
 import { patientById, registryStatus } from '@/data/patient';
 import { majorHistory } from '@/data/timeline';
@@ -58,7 +57,7 @@ export default function ClinicianPatient() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [patient?.id]);
 
-  if (!patient) return <Navigate to="/clinician" replace />;
+  if (!patient) return <Navigate to="/clinician/patients" replace />;
 
   const status = registryStatus[patient.id];
   /** Only the demo patient has a fully linked longitudinal record. */
@@ -66,27 +65,24 @@ export default function ClinicianPatient() {
   const freshness = freshnessBand(patient.sourceFreshnessDays);
 
   return (
-    <div className="min-h-dvh bg-canvas">
-      <header className="border-b border-line bg-white">
-        <div className="mx-auto flex max-w-[1180px] flex-wrap items-center justify-between gap-4 px-5 py-3.5 sm:px-8">
-          <Link to="/clinician" className="flex items-center gap-3">
-            <Wordmark className="h-[17px]" />
+    <div className="bg-canvas">
+      <main className="mx-auto max-w-[1140px] px-5 py-8 sm:px-8">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <Link
+            to="/clinician/patients"
+            className="inline-flex items-center gap-1.5 text-[13px] font-medium text-ink-500 transition-colors hover:text-ink-900"
+          >
+            <ArrowLeft className="size-3.5" />
+            All patients
           </Link>
-          <Link to={`/emergency/${patient.id}`} className={buttonClasses({ variant: 'critical', size: 'sm' })}>
+          <Link
+            to={`/emergency/${patient.id}`}
+            className={buttonClasses({ variant: 'critical', size: 'sm' })}
+          >
             <Siren className="size-[15px]" />
             Emergency Mode
           </Link>
         </div>
-      </header>
-
-      <main className="mx-auto max-w-[1180px] px-5 py-8 sm:px-8 sm:py-10">
-        <Link
-          to="/clinician"
-          className="inline-flex items-center gap-1.5 text-[13px] font-medium text-ink-500 transition-colors hover:text-ink-900"
-        >
-          <ArrowLeft className="size-3.5" />
-          Patient search
-        </Link>
 
         {/* --- Identity banner --------------------------------------------- */}
         <div className="mt-5 flex flex-wrap items-start justify-between gap-6 border-b border-line pb-6">
@@ -150,7 +146,7 @@ export default function ClinicianPatient() {
               title="Sparse profile — treat absence as unknown"
               description={`${patient.displayName} has ${status.linkedSources} linked source${status.linkedSources === 1 ? '' : 's'}. A thin record is not a clean bill of health: it means PULSE has nothing to report, not that there is nothing to report. Proceed on clinical assessment.`}
               action={
-                <Link to="/clinician" className={buttonClasses({ variant: 'secondary', size: 'sm' })}>
+                <Link to="/clinician/patients" className={buttonClasses({ variant: 'secondary', size: 'sm' })}>
                   Back to patient search
                 </Link>
               }

@@ -80,16 +80,19 @@ function Nav() {
         </Link>
         <nav className="flex items-center gap-1.5">
           <Link
-            to="/clinician"
-            className="hidden rounded-md px-3 py-2 text-[13px] font-medium text-ink-600 transition-colors hover:bg-ink-50 hover:text-ink-900 sm:block"
-          >
-            Clinician
-          </Link>
-          <Link
             to="/app/dashboard"
             className="hidden rounded-md px-3 py-2 text-[13px] font-medium text-ink-600 transition-colors hover:bg-ink-50 hover:text-ink-900 sm:block"
           >
-            Patient app
+            Patient login
+          </Link>
+          <Link
+            to="/clinician"
+            className="hidden rounded-md px-3 py-2 text-[13px] font-medium text-ink-600 transition-colors hover:bg-ink-50 hover:text-ink-900 sm:block"
+          >
+            Clinician login
+          </Link>
+          <Link to="/login" className={buttonClasses({ variant: 'secondary', size: 'sm' })}>
+            Sign in
           </Link>
           <Link to="/emergency" className={buttonClasses({ variant: 'primary', size: 'sm' })}>
             <Siren className="size-[15px]" />
@@ -761,14 +764,30 @@ function Vision() {
             trustworthy and permissioned at the moment a clinician needs them.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-2.5">
-            <Link to="/emergency" className={buttonClasses({ variant: 'primary', size: 'lg' })}>
+            <Link to="/app/dashboard" className={buttonClasses({ variant: 'primary', size: 'lg' })}>
+              <UserRound className="size-[17px]" />
+              Patient login
+            </Link>
+            <Link to="/clinician" className={buttonClasses({ variant: 'primary', size: 'lg' })}>
+              <Stethoscope className="size-[17px]" />
+              Clinician login
+            </Link>
+            <Link to="/emergency" className={buttonClasses({ variant: 'secondary', size: 'lg' })}>
               <Siren className="size-[17px]" />
               Try Emergency Mode
             </Link>
-            <Link to="/app/dashboard" className={buttonClasses({ variant: 'secondary', size: 'lg' })}>
-              Explore the patient app
-            </Link>
           </div>
+          <p className="mt-4 text-[12.5px] text-ink-400">
+            New here?{' '}
+            <Link to="/register/patient" className="font-medium text-accent-600 hover:underline">
+              Create a patient account
+            </Link>{' '}
+            or{' '}
+            <Link to="/register/clinician" className="font-medium text-accent-600 hover:underline">
+              register as a clinician
+            </Link>
+            .
+          </p>
         </motion.div>
       </div>
     </section>
@@ -791,6 +810,9 @@ function Footer() {
           </Link>
           <Link to="/app/dashboard" className="hover:text-ink-900">
             Patient app
+          </Link>
+          <Link to="/login" className="hover:text-ink-900">
+            Sign in
           </Link>
           <Link to="/app/consent" className="hover:text-ink-900">
             Consent & audit

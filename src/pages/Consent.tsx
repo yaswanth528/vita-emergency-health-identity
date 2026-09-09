@@ -1,11 +1,9 @@
 import { Bell, Share2, ShieldCheck } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { AuditLog, ConsentPanel } from '@/components/system/ConsentPanel';
 import { Card, FieldLabel, SectionHeader, Tabs } from '@/components/ui';
 import { PageBody, PageHeader } from '@/layouts/AppShell';
-import { consentGrants } from '@/data/consent';
 import { useVita } from '@/hooks/useVita';
-import type { ConsentGrant } from '@/types';
 
 /* ============================================================================
    Consent & access control
@@ -20,19 +18,11 @@ import type { ConsentGrant } from '@/types';
 type Filter = 'active' | 'all';
 
 export default function Consent() {
-  const { audit, sessionAuditCount } = useVita();
+  /* Grants come from the shared store, so a grant created by a clinician
+     breaking glass — or by the patient approving a request — appears here
+     immediately rather than being a separate fixture. */
+  const { audit, sessionAuditCount, grants, revokeGrant } = useVita();
   const [filter, setFilter] = useState<Filter>('active');
-  const [revoked, setRevoked] = useState<string[]>([]);
-
-  const grants: ConsentGrant[] = useMemo(
-    () =>
-      consentGrants.map((g) =>
-        revoked.includes(g.id)
-          ? { ...g, status: 'revoked' as const, expiresAt: 'Revoked just now', visibleData: [], withheldData: ['All data — access revoked by patient'] }
-          : g,
-      ),
-    [revoked],
-  );
 
   const shown = filter === 'active' ? grants.filter((g) => g.status === 'active') : grants;
   const activeCount = grants.filter((g) => g.status === 'active').length;
@@ -84,11 +74,7 @@ export default function Consent() {
             />
             <div className="space-y-3">
               {shown.map((g) => (
-                <ConsentPanel
-                  key={g.id}
-                  grant={g}
-                  onRevoke={(id) => setRevoked((prev) => [...prev, id])}
-                />
+                <ConsentPanel key={g.id} grant={g} onRevoke={revokeGrant} />
               ))}
             </div>
           </div>

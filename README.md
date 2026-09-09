@@ -88,34 +88,68 @@ the demo you just ran — not a fixture pretending to be a system.
 
 ---
 
-## Screens
+## Two connected sides
 
-Emergency Mode is the centre of the product. It deliberately does not live inside the
-application shell, because a clinician in an emergency has no use for navigation.
+Patients and clinicians get **different products over one record**. Not one dashboard that
+branches on a flag — different shells, different navigation, different permitted actions.
+
+| | Patient `/app/*` | Clinician `/clinician/*` |
+|---|---|---|
+| Opens on | "Is my record in order, and who can see it?" | "Who needs me right now?" |
+| Can | Approve · decline · revoke · activate emergency | Search · request · break glass with a reason |
+| Cannot | See other patients | Approve their own request, extend a grant, or see a withheld category |
+| Tone | Calm, personal | Dense, fast, action-ordered |
+
+The asymmetry is enforced in the route tree and the store, not by hiding buttons. There is no
+action anywhere in the model by which a clinician overrides a patient's decision — the nearest
+thing is break-glass, which demands a written reason, expires in two hours, and notifies the
+patient the moment it fires.
+
+### The connected demo
+
+The **Guided demo** button drives the real store, so each step genuinely causes the next:
+
+1. Patient signs in — emergency profile ready, one request pending
+2. She presses **Emergency** → confirmation states what it does *and does not* do → alarm raised, **nothing released**
+3. Switch to clinician — the alert is already there, ticking. Same object, not a second mock
+4. **Open Emergency Mode** → break-glass gate, disabled until a reason is typed
+5. Emergency context: PENICILLIN, blood group, 4 medications, conditions, major history
+6. Any claim → evidence drawer with source, page, date, confidence
+7. Conflicting statin doses → both shown, neither chosen
+8. Switch back to the patient — *"Dr. Arjun Rao accessed your emergency health context"*, with his reason and the expiry
+9. Consent page — the break-glass grant is live, revocable, and the audit trail holds the reads from the other side
+
+The non-emergency path matters too: a clinician requests **medication verification**, the patient
+approves on her own screen, and a scoped 72-hour grant appears for both parties. Emergency Mode is
+the wedge; longitudinal context is the platform.
+
+## Screens
 
 | Route | What it is |
 |---|---|
 | `/` | Landing — problem → insight → architecture → AI → trust → emergency → vision |
-| `/emergency` | Identify → verify (the 00:00 / 00:05 / 00:10 / 00:30 beats, as real gates) |
-| `/emergency/:id` | **Emergency Mode** — dark, one dominant fact, everything one tap from its source |
-| `/clinician` | Clinician workspace — patient lookup and authorisation state |
-| `/clinician/:id` | Clinical snapshot with full conflict treatment |
-| `/app/dashboard` | Patient dashboard |
-| `/app/profile` | Health profile + health graph (conditions ↔ medications) |
-| `/app/documents[/:id]` | Document centre; original page beside its extraction |
-| `/app/ingest` | AI pipeline: Ingest → Extract → Reconcile → Graph → Snapshot |
-| `/app/timeline` | Longitudinal history, 2016–2026, reconstructed from 8 sources |
-| `/app/consent` | Consent grants, break-glass, live audit trail |
-| `/app/caregiver` | Caregiver mode — scoped access, can share emergency context |
-| `/app/settings` | Security posture and the explicit list of what is *not* built |
-| `/login` | Role selection (clinician · patient · caregiver) |
+| `/login` | Role selection · demo mode |
+| `/register/patient` · `/register/clinician` | Two genuinely different registrations — a health identity vs a professional credential |
+| `/emergency` · `/emergency/:id` | **Emergency Mode** — dark, one dominant fact, outside both shells |
+| **Patient** | |
+| `/app/dashboard` | Overview — status, emergency control, connected care, live activity |
+| `/app/profile` · `/app/medications` · `/app/timeline` | The longitudinal record |
+| `/app/emergency-profile` | Exactly what a clinician sees, and what stays withheld |
+| `/app/documents[/:id]` · `/app/ingest` | Sources and the AI pipeline |
+| `/app/requests` | The only screen where an access decision can be made |
+| `/app/consent` · `/app/notifications` · `/app/caregiver` · `/app/settings` | Trust controls |
+| **Clinician** | |
+| `/clinician` | Overview — emergencies, unlinked arrivals, connected patients, requests |
+| `/clinician/patients[/:id]` | Registry and clinical snapshot |
+| `/clinician/emergency` | Live alert board |
+| `/clinician/requests` | What was asked, what was granted — no approve buttons |
+| `/clinician/new-patient` | Search before creating; invite if genuinely absent |
+| `/clinician/audit` · `/clinician/settings` | The log, and this account's limits |
 
 The registry is deliberately not uniform. Of four patients: one is fully linked, one has no
 standing grant and needs break-glass, one has an almost-empty profile, and one cannot be released
 at all because their identity is unverified. A demo where every record is perfect proves nothing
 about the system's judgement.
-
----
 
 ## Architecture
 
@@ -126,13 +160,14 @@ src/
     evidence/    EvidenceBadge ConfidenceMeter EvidenceDrawer (evidence + conflict modes)
     clinical/    AllergyAlert MedicationCard ConditionCard LabTrendCard Timeline HealthGraph
     system/      AIProcessing ConsentPanel AuditLog DemoGuide Wordmark
-  layouts/       AppShell (sidebar + page frame)
-  pages/         one file per route
+  layouts/       AppShell (patient) · ClinicianShell
+  pages/         one file per route; patient/ and clinician/ subtrees
   data/          patient · clinical · documents · evidence · extractions
-                 conflicts · timeline · consent (+ audit)
-  hooks/         useVita — evidence drawer, live audit, conflict verification
-  lib/           aiService · format · utils
-  types/         the domain model
+                 conflicts · timeline · consent (+ audit) · platform
+  hooks/         useVita — one store: session, consent, requests,
+                 emergencies, notifications, audit, evidence viewer
+  lib/           aiService · format · elapsed · utils
+  types/         index (clinical model) · platform (who may see it)
 ```
 
 ### The AI seam

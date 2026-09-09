@@ -1,244 +1,256 @@
 import {
   ArrowRight,
+  BadgeCheck,
   CalendarClock,
   FileStack,
+  Inbox,
+  Pill,
   Plus,
-  ScanLine,
   Share2,
   ShieldCheck,
   Siren,
   TriangleAlert,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { AllergyAlert, MedicationCard } from '@/components/clinical';
-import { EvidenceBadge } from '@/components/evidence/EvidenceBadge';
+import { EmergencyButton } from '@/components/system/EmergencyControls';
+import { ConnectedClinicianCard, TrustRow } from '@/components/system/PlatformUI';
 import { Badge, Card, FieldLabel, Progress, SectionHeader, buttonClasses } from '@/components/ui';
 import { PageBody, PageHeader } from '@/layouts/AppShell';
-import { activeMedications, allergies, conditions } from '@/data/clinical';
-import { activeGrants } from '@/data/consent';
+import { activeMedications, conditions } from '@/data/clinical';
 import { documents } from '@/data/documents';
 import { kavita } from '@/data/patient';
+import { clinicianById, patientUser, seedConnections } from '@/data/platform';
 import { timeline } from '@/data/timeline';
-import { useOpenConflicts, useVita } from '@/hooks/useVita';
+import { useNotifications, useOpenConflicts, useVita } from '@/hooks/useVita';
 import { formatDate, relativeAge } from '@/lib/format';
+import { consentScopeLabel } from '@/data/consent';
 
 /* ============================================================================
-   Patient dashboard
+   Patient overview
    ----------------------------------------------------------------------------
-   Written for the patient, not the clinician. The question it answers is
-   "is my record in good order and who can see it", not "what is wrong with me".
-   The clinical detail lives one level down in the health profile.
+   Written for the patient, not the clinician. The question it answers is "is my
+   record in order and who can see it", never "what is wrong with me".
+
+   The emergency control sits high and is the only loud element on the page.
+   Everything else is deliberately calm — a patient checking their record on a
+   normal Tuesday should not be met with an alarm.
    ========================================================================== */
 
 export default function Dashboard() {
   const conflicts = useOpenConflicts();
-  const { openEvidence } = useVita();
-  const recentEvents = timeline.slice(0, 4);
+  const { openEvidence, grants, requests, emergencies } = useVita();
+  const { notifications, unread } = useNotifications(patientUser.id);
+
+  const pendingRequests = requests.filter(
+    (r) => r.patientId === kavita.id && r.status === 'pending',
+  );
+  const activeGrants = grants.filter((g) => g.status === 'active');
+  const myEmergencies = emergencies.filter((e) => e.patientId === kavita.id);
+  const connections = seedConnections.filter((c) => c.patientId === kavita.id);
+
+  /* Recent activity is assembled from real store objects, not a fixture — so it
+     reflects what actually happened in this session. */
+  const activity = [
+    ...myEmergencies.map((e) => ({
+      when: e.startedAt,
+      text:
+        e.status === 'active'
+          ? 'You activated an emergency. Your care team was notified.'
+          : 'Emergency stood down.',
+      tone: 'critical' as const,
+    })),
+    ...notifications.slice(0, 4).map((n) => ({
+      when: n.createdAt,
+      text: n.title,
+      tone: n.priority === 'high' ? ('critical' as const) : ('neutral' as const),
+    })),
+    ...timeline.slice(0, 3).map((e) => ({
+      when: relativeAge(e.date),
+      text: e.title,
+      tone: 'neutral' as const,
+    })),
+  ].slice(0, 6);
 
   return (
     <>
       <PageHeader
-        eyebrow="Patient"
+        eyebrow="Your health identity"
         title={`Good morning, ${kavita.fullName.split(' ')[0]}`}
-        description="Your longitudinal health profile is assembled from every linked source. You control who can see it, and for how long."
+        description="Your record is assembled from every linked source. You decide who sees it, what they see, and for how long."
         actions={
           <>
             <Link to="/app/ingest" className={buttonClasses({ variant: 'secondary' })}>
               <Plus className="size-[15px]" />
-              Add medical record
+              Add record
             </Link>
-            <Link to="/emergency" className={buttonClasses({ variant: 'primary' })}>
-              <Siren className="size-[15px]" />
-              Emergency profile
+            <Link to="/app/consent" className={buttonClasses({ variant: 'primary' })}>
+              <Share2 className="size-[15px]" />
+              Share access
             </Link>
           </>
         }
       />
 
       <PageBody className="space-y-8">
-        {/* --- Status strip ------------------------------------------------- */}
+        {/* --- Emergency control ------------------------------------------- */}
+        <EmergencyButton patientId={kavita.id} />
+
+        {/* --- Health status ------------------------------------------------ */}
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <StatusCard
+            label="Emergency profile"
+            value="Ready"
+            tone="verified"
+            sub="Allergies, blood group, medications and history all populated"
+            href="/app/emergency-profile"
+          />
+          <StatusCard
+            label="Identity"
+            value="Verified"
+            tone="verified"
+            sub={`ABHA ${kavita.abhaMasked}`}
+            icon={<BadgeCheck className="size-3.5" />}
+          />
           <StatusCard
             label="Profile completeness"
             value={`${kavita.profileCompleteness}%`}
-            sub={`${documents.length} sources linked`}
             progress={kavita.profileCompleteness}
+            sub={`${documents.length} sources linked · ${kavita.sourceFreshnessDays} days fresh`}
           />
           <StatusCard
-            label="Source freshness"
-            value={`${kavita.sourceFreshnessDays} days`}
-            sub={`Latest ${formatDate('2026-08-19')}`}
-            tone="verified"
-          />
-          <StatusCard
-            label="Active access grants"
-            value={String(activeGrants.length)}
-            sub="1 emergency · 1 caregiver · 1 lab"
-            href="/app/consent"
-          />
-          <StatusCard
-            label="Needs your attention"
-            value={String(conflicts.length)}
-            sub={conflicts.length ? 'Conflicting records' : 'Nothing outstanding'}
-            tone={conflicts.length ? 'caution' : 'verified'}
-            href="/app/ingest"
+            label="Needs your decision"
+            value={String(pendingRequests.length)}
+            tone={pendingRequests.length ? 'caution' : 'verified'}
+            sub={pendingRequests.length ? 'Access requests waiting' : 'Nothing waiting on you'}
+            href="/app/requests"
           />
         </div>
 
         {/* --- Quick actions ------------------------------------------------ */}
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <QuickAction
-            to="/emergency"
-            icon={<Siren className="size-4" />}
-            title="Emergency profile"
-            detail="What a clinician sees if you cannot speak"
-            emphasis
-          />
-          <QuickAction
-            to="/app/consent"
-            icon={<Share2 className="size-4" />}
-            title="Share access"
-            detail="Grant scoped, time-boxed access"
-          />
-          <QuickAction
-            to="/app/timeline"
-            icon={<CalendarClock className="size-4" />}
-            title="Health timeline"
-            detail={`${timeline.length} events since 2016`}
-          />
-          <QuickAction
-            to="/app/ingest"
-            icon={<Plus className="size-4" />}
-            title="Add medical record"
-            detail="Upload and process a document"
-          />
+          <QuickAction to="/app/emergency-profile" icon={<Siren className="size-4" />} title="Emergency profile" detail="What clinicians see if you can't speak" />
+          <QuickAction to="/app/ingest" icon={<Plus className="size-4" />} title="Upload a record" detail="Prescription, lab report or scan" />
+          <QuickAction to="/app/medications" icon={<Pill className="size-4" />} title="My medications" detail={`${activeMedications.length} active`} />
+          <QuickAction to="/app/timeline" icon={<CalendarClock className="size-4" />} title="Health timeline" detail={`${timeline.length} events since 2016`} />
         </div>
 
-        {/* --- Conflicts ---------------------------------------------------- */}
-        {conflicts.length > 0 && (
+        {/* --- Requests needing a decision ---------------------------------- */}
+        {pendingRequests.length > 0 && (
           <Card accent="caution" className="hatch-caution">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div className="flex min-w-0 items-start gap-3">
+                <Inbox className="mt-0.5 size-4 shrink-0 text-caution-600" />
+                <div className="min-w-0">
+                  <h3 className="text-[14px] font-semibold text-ink-900">
+                    {pendingRequests.length} clinician
+                    {pendingRequests.length === 1 ? '' : 's'} asking for access
+                  </h3>
+                  <p className="mt-1.5 max-w-xl text-[12.5px] leading-relaxed text-ink-600">
+                    Nothing has been shared. Each request names exactly what it wants and for how
+                    long — you can decline without giving a reason.
+                  </p>
+                </div>
+              </div>
+              <Link to="/app/requests" className={buttonClasses({ variant: 'primary', size: 'sm' })}>
+                Review requests
+              </Link>
+            </div>
+          </Card>
+        )}
+
+        {/* --- Conflicts ------------------------------------------------------ */}
+        {conflicts.length > 0 && (
+          <Card accent="caution">
             <div className="flex items-start gap-3">
               <TriangleAlert className="mt-0.5 size-4 shrink-0 text-caution-600" />
-              <div className="min-w-0 flex-1">
+              <div>
                 <h3 className="text-[14px] font-semibold text-ink-900">
                   {conflicts.length} record{conflicts.length > 1 ? 's' : ''} need clinician
                   verification
                 </h3>
-                <p className="mt-1.5 text-[13px] leading-relaxed text-ink-500">
-                  Two of your sources disagree. PULSE has not chosen between them — both versions stay
+                <p className="mt-1.5 max-w-2xl text-[13px] leading-relaxed text-ink-500">
+                  Two of your sources disagree. PULSE has not chosen between them — both stay
                   visible until a clinician confirms which is correct.
                 </p>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {conflicts.map((c) => (
-                    <ConflictChip key={c.id} id={c.id} subject={c.subject} />
-                  ))}
-                </div>
+                <Link
+                  to="/app/ingest"
+                  className="mt-2.5 inline-flex items-center gap-1 text-[12.5px] font-medium text-accent-600 hover:underline"
+                >
+                  See what reconciliation found
+                  <ArrowRight className="size-3" />
+                </Link>
               </div>
             </div>
           </Card>
         )}
 
-        {/* --- Critical + medications --------------------------------------- */}
+        {/* --- Connected care + activity ------------------------------------ */}
         <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
+          <section>
+            <SectionHeader
+              eyebrow={`${activeGrants.length} active grants`}
+              title="Connected care"
+              description="Clinicians who currently hold access, and what each of them can see."
+              action={
+                <Link
+                  to="/app/consent"
+                  className="inline-flex items-center gap-1 text-[13px] font-medium text-accent-600 hover:underline"
+                >
+                  Manage
+                  <ArrowRight className="size-3.5" />
+                </Link>
+              }
+            />
+            <div className="mt-4 space-y-2.5">
+              {connections.map((c) => {
+                const clinician = clinicianById(c.clinicianId);
+                const grant = activeGrants.find((g) => g.granteeName === clinician?.name);
+                return (
+                  <ConnectedClinicianCard
+                    key={c.id}
+                    clinicianId={c.clinicianId}
+                    scope={grant ? consentScopeLabel[grant.scope] : 'No active access'}
+                    status={grant ? 'active' : 'connected only'}
+                    expires={grant ? grant.expiresAt : 'Nothing shared'}
+                  />
+                );
+              })}
+            </div>
+          </section>
+
           <div className="space-y-6">
             <section>
               <SectionHeader
-                eyebrow="Always surfaced first"
-                title="Critical information"
-                description="These are the facts released to an authorised clinician before anything else."
-              />
-              <div className="mt-4 space-y-3">
-                {allergies.map((a) => (
-                  <AllergyAlert key={a.id} allergy={a} />
-                ))}
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <Card>
-                    <FieldLabel>Blood group</FieldLabel>
-                    <div className="mt-1.5 text-[28px] font-semibold leading-none text-ink-900">
-                      {kavita.bloodGroup.value}
-                    </div>
-                    <div className="mt-3">
-                      <EvidenceBadge fact={kavita.bloodGroup} claimLabel="Blood group" />
-                    </div>
-                  </Card>
-                  <Card>
-                    <FieldLabel>Emergency contact</FieldLabel>
-                    <div className="mt-1.5 text-[15px] font-semibold text-ink-900">
-                      {kavita.emergencyContacts[0].name}
-                    </div>
-                    <p className="mt-0.5 text-[12.5px] text-ink-500">
-                      {kavita.emergencyContacts[0].relationship} ·{' '}
-                      {kavita.emergencyContacts[0].phoneMasked}
-                    </p>
-                    <Link
-                      to="/app/caregiver"
-                      className="mt-3 inline-flex items-center gap-1 text-[12.5px] font-medium text-accent-600 hover:underline"
-                    >
-                      Manage caregiver access
-                      <ArrowRight className="size-3" />
-                    </Link>
-                  </Card>
-                </div>
-              </div>
-            </section>
-
-            <section>
-              <SectionHeader
-                eyebrow={`${activeMedications.length} active`}
-                title="Current medications"
+                eyebrow={unread > 0 ? `${unread} unread` : 'Recent'}
+                title="Activity"
                 action={
                   <Link
-                    to="/app/profile"
+                    to="/app/notifications"
                     className="inline-flex items-center gap-1 text-[13px] font-medium text-accent-600 hover:underline"
                   >
-                    Full profile
+                    All
                     <ArrowRight className="size-3.5" />
                   </Link>
                 }
               />
-              <div className="mt-4 space-y-2.5">
-                {activeMedications.map((m) => (
-                  <MedicationCard key={m.id} medication={m} />
-                ))}
-              </div>
-            </section>
-          </div>
-
-          {/* --- Right rail --------------------------------------------------- */}
-          <div className="space-y-6">
-            <section>
-              <SectionHeader eyebrow="Recent" title="Health activity" />
-              <div className="mt-4 overflow-hidden rounded-lg border border-line bg-white shadow-card">
+              <Card className="mt-4" padded={false}>
                 <ul className="divide-y divide-line">
-                  {recentEvents.map((e) => (
-                    <li key={e.id}>
-                      <button
-                        onClick={() => e.evidenceId && openEvidence(e.evidenceId, e.title)}
-                        className="w-full px-4 py-3 text-left transition-colors hover:bg-canvas-sunk"
-                      >
-                        <div className="flex items-baseline justify-between gap-3">
-                          <span className="truncate text-[13px] font-medium text-ink-900">
-                            {e.title}
-                          </span>
-                          <span className="shrink-0 font-mono text-[10.5px] text-ink-400">
-                            {relativeAge(e.date)}
-                          </span>
-                        </div>
-                        <p className="mt-0.5 truncate text-[12px] text-ink-500">
-                          {e.facility ?? 'Recorded from source document'}
-                        </p>
-                      </button>
+                  {activity.map((a, i) => (
+                    <li key={i} className="flex items-start gap-2.5 px-4 py-3">
+                      <span
+                        className={
+                          'mt-1.5 size-1.5 shrink-0 rounded-full ' +
+                          (a.tone === 'critical' ? 'bg-critical-500' : 'bg-ink-200')
+                        }
+                      />
+                      <div className="min-w-0">
+                        <p className="text-[12.5px] leading-snug text-ink-800">{a.text}</p>
+                        <p className="mt-0.5 font-mono text-[10.5px] text-ink-400">{a.when}</p>
+                      </div>
                     </li>
                   ))}
                 </ul>
-                <Link
-                  to="/app/timeline"
-                  className="flex items-center justify-between border-t border-line bg-canvas-sunk px-4 py-2.5 text-[12.5px] font-medium text-ink-600 transition-colors hover:text-ink-900"
-                >
-                  View full timeline
-                  <ArrowRight className="size-3.5" />
-                </Link>
-              </div>
+              </Card>
             </section>
 
             <section>
@@ -268,25 +280,20 @@ export default function Dashboard() {
               <div className="flex items-start gap-2.5">
                 <ShieldCheck className="mt-0.5 size-4 shrink-0 text-accent-600" />
                 <div>
-                  <h3 className="text-[13.5px] font-semibold text-ink-900">Permissioned by default</h3>
+                  <h3 className="text-[13.5px] font-semibold text-ink-900">
+                    Permissioned by default
+                  </h3>
                   <p className="mt-1.5 text-[12.5px] leading-relaxed text-ink-500">
                     Nobody sees your record without a grant, every grant expires, and every read is
                     logged with a name against it.
                   </p>
-                  <Link
-                    to="/app/consent"
-                    className="mt-2.5 inline-flex items-center gap-1 text-[12.5px] font-medium text-accent-600 hover:underline"
-                  >
-                    Review who has access
-                    <ArrowRight className="size-3" />
-                  </Link>
                 </div>
               </div>
             </Card>
           </div>
         </div>
 
-        {/* --- Documents ---------------------------------------------------- */}
+        {/* --- Documents ------------------------------------------------------ */}
         <section>
           <SectionHeader
             eyebrow={`${documents.length} linked`}
@@ -329,12 +336,29 @@ export default function Dashboard() {
             ))}
           </div>
         </section>
+
+        <Card>
+          <TrustRow
+            items={[
+              'Identity verified',
+              'You control every grant',
+              'All access time-limited',
+              'Every read logged',
+            ]}
+          />
+          <button
+            onClick={() => openEvidence('ev-allergy-penicillin', 'Penicillin allergy')}
+            className="mt-3 text-[12.5px] font-medium text-accent-600 hover:underline"
+          >
+            See what “source-backed” means for one of your records
+          </button>
+        </Card>
       </PageBody>
     </>
   );
 }
 
-/* --- Local components -------------------------------------------------------- */
+/* --- Local components ---------------------------------------------------------- */
 
 function StatusCard({
   label,
@@ -343,6 +367,7 @@ function StatusCard({
   progress,
   tone = 'neutral',
   href,
+  icon,
 }: {
   label: string;
   value: string;
@@ -350,20 +375,28 @@ function StatusCard({
   progress?: number;
   tone?: 'neutral' | 'caution' | 'verified';
   href?: string;
+  icon?: React.ReactNode;
 }) {
   const body = (
     <Card interactive={Boolean(href)} className="h-full">
-      <FieldLabel>{label}</FieldLabel>
+      <FieldLabel className="flex items-center gap-1.5">
+        {icon}
+        {label}
+      </FieldLabel>
       <div
         className={
-          'mt-1.5 text-[24px] font-semibold leading-none tabular-nums ' +
-          (tone === 'caution' ? 'text-caution-600' : tone === 'verified' ? 'text-verified-600' : 'text-ink-900')
+          'mt-1.5 text-[22px] font-semibold leading-none tabular-nums ' +
+          (tone === 'caution'
+            ? 'text-caution-600'
+            : tone === 'verified'
+              ? 'text-verified-600'
+              : 'text-ink-900')
         }
       >
         {value}
       </div>
       {progress !== undefined && <Progress value={progress} tone="neutral" className="mt-3" />}
-      <p className="mt-2 text-[12px] text-ink-500">{sub}</p>
+      <p className="mt-2 text-[12px] leading-snug text-ink-500">{sub}</p>
     </Card>
   );
   return href ? <Link to={href}>{body}</Link> : body;
@@ -374,58 +407,22 @@ function QuickAction({
   icon,
   title,
   detail,
-  emphasis,
 }: {
   to: string;
   icon: React.ReactNode;
   title: string;
   detail: string;
-  emphasis?: boolean;
 }) {
   return (
     <Link
       to={to}
-      className={
-        'group flex items-start gap-3 rounded-lg border px-4 py-3.5 transition-[border-color,box-shadow] duration-150 ' +
-        (emphasis
-          ? 'border-critical-100 bg-critical-50 hover:border-critical-300'
-          : 'border-line bg-white shadow-card hover:border-ink-200 hover:shadow-raised')
-      }
+      className="group flex items-start gap-3 rounded-lg border border-line bg-white px-4 py-3.5 shadow-card transition-[border-color,box-shadow] duration-150 hover:border-ink-200 hover:shadow-raised"
     >
-      <span className={'mt-0.5 shrink-0 ' + (emphasis ? 'text-critical-500' : 'text-ink-400')}>
-        {icon}
-      </span>
+      <span className="mt-0.5 shrink-0 text-ink-400">{icon}</span>
       <span className="min-w-0">
-        <span
-          className={
-            'block text-[13.5px] font-semibold leading-tight ' +
-            (emphasis ? 'text-critical-700' : 'text-ink-900')
-          }
-        >
-          {title}
-        </span>
-        <span
-          className={
-            'mt-0.5 block text-[12px] leading-snug ' +
-            (emphasis ? 'text-critical-600/80' : 'text-ink-500')
-          }
-        >
-          {detail}
-        </span>
+        <span className="block text-[13.5px] font-semibold leading-tight text-ink-900">{title}</span>
+        <span className="mt-0.5 block text-[12px] leading-snug text-ink-500">{detail}</span>
       </span>
     </Link>
-  );
-}
-
-function ConflictChip({ id, subject }: { id: string; subject: string }) {
-  const { openConflict } = useVita();
-  return (
-    <button
-      onClick={() => openConflict(id)}
-      className="inline-flex items-center gap-1.5 rounded-sm border border-caution-300 bg-white px-2 py-1 text-[12px] font-medium text-caution-600 transition-colors hover:bg-caution-50"
-    >
-      <ScanLine className="size-3" />
-      {subject}
-    </button>
   );
 }

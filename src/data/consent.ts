@@ -18,9 +18,9 @@ export const consentGrants: ConsentGrant[] = [
     organisation: 'Apollo Hospitals · Emergency Department',
     scope: 'emergency-context',
     purpose: 'Unscheduled presentation — emergency clinical context required for immediate care.',
-    grantedAt: '09 Sep 2026 · 08:41',
-    expiresAt: '09 Sep 2026 · 10:41',
-    status: 'active',
+    grantedAt: '08 Sep 2026 · 08:41',
+    expiresAt: 'Expired 08 Sep 2026 · 10:41',
+    status: 'expired',
     basis: 'break-glass',
     visibleData: [
       'Allergies and adverse drug reactions',
@@ -62,6 +62,25 @@ export const consentGrants: ConsentGrant[] = [
       'Consent administration',
       'Ability to grant clinician access beyond emergency scope',
     ],
+  },
+  {
+    id: 'csn-meera-longitudinal',
+    granteeName: 'Dr. Meera Rao',
+    granteeRole: 'clinician',
+    organisation: 'Apollo Hospitals · Cardiology OPD',
+    scope: 'full-record',
+    purpose: 'Six-month cardiology review — longitudinal record requested ahead of the appointment.',
+    grantedAt: '14 Aug 2026 · 09:44',
+    expiresAt: '13 Sep 2026 · 09:44',
+    status: 'active',
+    basis: 'patient-granted',
+    visibleData: [
+      'Longitudinal timeline',
+      'All source documents',
+      'Lab trends',
+      'Medications and conditions',
+    ],
+    withheldData: ['Mental health records', 'Reproductive and sexual health history'],
   },
   {
     id: 'csn-lalpath',
@@ -128,7 +147,7 @@ export const auditEvents: AuditEvent[] = [
   {
     id: 'aud-01',
     time: '08:41:02',
-    date: '2026-09-09',
+    date: '2026-09-08',
     action: 'identity-verify',
     actor: 'System',
     actorRole: 'system',
@@ -138,7 +157,7 @@ export const auditEvents: AuditEvent[] = [
   {
     id: 'aud-02',
     time: '08:41:04',
-    date: '2026-09-09',
+    date: '2026-09-08',
     action: 'consent-grant',
     actor: 'Dr. Meera Rao',
     actorRole: 'clinician',
@@ -151,7 +170,7 @@ export const auditEvents: AuditEvent[] = [
   {
     id: 'aud-03',
     time: '08:41:09',
-    date: '2026-09-09',
+    date: '2026-09-08',
     action: 'emergency-access',
     actor: 'Dr. Meera Rao',
     actorRole: 'clinician',
@@ -163,7 +182,7 @@ export const auditEvents: AuditEvent[] = [
   {
     id: 'aud-04',
     time: '08:42:17',
-    date: '2026-09-09',
+    date: '2026-09-08',
     action: 'medication-view',
     actor: 'Dr. Meera Rao',
     actorRole: 'clinician',
@@ -175,7 +194,7 @@ export const auditEvents: AuditEvent[] = [
   {
     id: 'aud-05',
     time: '08:43:05',
-    date: '2026-09-09',
+    date: '2026-09-08',
     action: 'document-open',
     actor: 'Dr. Meera Rao',
     actorRole: 'clinician',
@@ -187,7 +206,7 @@ export const auditEvents: AuditEvent[] = [
   {
     id: 'aud-06',
     time: '08:43:31',
-    date: '2026-09-09',
+    date: '2026-09-08',
     action: 'evidence-view',
     actor: 'Dr. Meera Rao',
     actorRole: 'clinician',

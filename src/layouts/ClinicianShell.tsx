@@ -1,80 +1,80 @@
 import {
   Activity,
   CalendarClock,
-  FileStack,
-  HeartPulse,
-  Inbox,
   LayoutDashboard,
   type LucideIcon,
   Menu,
-  Pill,
-  ScanLine,
+  ScrollText,
+  Send,
   ShieldCheck,
   Siren,
-  Stethoscope,
+  UserPlus,
   UsersRound,
   X,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
+import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { AccountChip, NotificationBell } from '@/components/system/PlatformUI';
 import { Wordmark } from '@/components/system/Wordmark';
 import { Badge } from '@/components/ui';
-import { kavita } from '@/data/patient';
-import { patientUser } from '@/data/platform';
-import { useActiveEmergency, useNotifications, useOpenConflicts, useVita } from '@/hooks/useVita';
+import { clinicianById, clinicianUser } from '@/data/platform';
+import { useEmergencyAlerts, useVita } from '@/hooks/useVita';
 import { cn } from '@/lib/utils';
 
 /* ============================================================================
-   AppShell — the patient's application
+   ClinicianShell
    ----------------------------------------------------------------------------
-   Emergency Mode is deliberately NOT rendered inside this shell. It gets its
-   own surface, because a clinician in an emergency has no use for navigation.
+   Same design system as the patient app, deliberately different priorities.
 
-   The navigation here is the patient's information architecture: their health,
-   their sources, and the trust controls they own. There is no patient list and
-   no clinical workspace, because those are not theirs to have.
+   The patient shell opens on "is my record in order and who can see it". This
+   one opens on "who needs me right now", so the nav is ordered by urgency, the
+   emergency count is always visible in the chrome, and the density is higher.
+
+   What is absent matters as much: there is no consent-management item here.
+   A clinician can ask, and can break glass with a reason — they cannot
+   administer another person's permissions.
    ========================================================================== */
 
 interface NavItem {
   to: string;
   label: string;
   icon: LucideIcon;
-  badge?: 'conflicts' | 'requests' | 'notifications';
+  end?: boolean;
+  badge?: 'emergency' | 'requests';
 }
 
-const healthNav: NavItem[] = [
-  { to: '/app/dashboard', label: 'Overview', icon: LayoutDashboard },
-  { to: '/app/profile', label: 'Health profile', icon: HeartPulse },
-  { to: '/app/medications', label: 'Medications', icon: Pill },
-  { to: '/app/timeline', label: 'Timeline', icon: CalendarClock },
-  { to: '/app/emergency-profile', label: 'Emergency profile', icon: Siren },
+const workNav: NavItem[] = [
+  { to: '/clinician', label: 'Overview', icon: LayoutDashboard, end: true },
+  { to: '/clinician/patients', label: 'Patients', icon: UsersRound },
+  { to: '/clinician/emergency', label: 'Emergency', icon: Siren, badge: 'emergency' },
 ];
 
-const sourcesNav: NavItem[] = [
-  { to: '/app/documents', label: 'Documents', icon: FileStack },
-  { to: '/app/ingest', label: 'AI processing', icon: ScanLine, badge: 'conflicts' },
+const flowNav: NavItem[] = [
+  { to: '/clinician/requests', label: 'Requests', icon: Send, badge: 'requests' },
+  { to: '/clinician/new-patient', label: 'New patient', icon: UserPlus },
 ];
 
-const trustNav: NavItem[] = [
-  { to: '/app/requests', label: 'Requests', icon: Inbox, badge: 'requests' },
-  { to: '/app/consent', label: 'Access & consent', icon: ShieldCheck },
-  { to: '/app/notifications', label: 'Notifications', icon: Activity, badge: 'notifications' },
-  { to: '/app/caregiver', label: 'Caregiver', icon: UsersRound },
-  { to: '/app/settings', label: 'Security', icon: Activity },
+const recordNav: NavItem[] = [
+  { to: '/clinician/timeline', label: 'Clinical timeline', icon: CalendarClock },
+  { to: '/clinician/audit', label: 'Audit log', icon: ScrollText },
+  { to: '/clinician/settings', label: 'Security', icon: Activity },
 ];
 
-export function AppShell() {
+export function ClinicianShell() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   const { user, signInAs } = useVita();
-  const emergency = useActiveEmergency(kavita.id);
+  const alerts = useEmergencyAlerts();
 
-  /* Deep-linking into the patient app signs you in as the patient. A prototype
-     affordance so judges never hit a dead end; production would challenge. */
+  /* Deep-linking into the clinician side signs you in as the clinician. This is
+     a prototype affordance so judges never hit a dead end; production would
+     redirect to an authentication challenge instead. */
   useEffect(() => {
-    if (!user || user.role !== 'patient') signInAs('patient');
+    if (!user || user.role !== 'clinician') signInAs('clinician');
   }, [user, signInAs]);
+
+  const clinician = clinicianById(user?.clinicianId ?? 'cl-rao');
 
   return (
     <div className="min-h-dvh bg-canvas">
@@ -89,7 +89,7 @@ export function AppShell() {
         </button>
         <Wordmark className="h-4" />
         <div className="flex items-center gap-1">
-          <NotificationBell recipientId={patientUser.id} href="/app/notifications" />
+          <NotificationBell recipientId={clinicianUser.id} href="/clinician/notifications" />
           <AccountChip compact />
         </div>
       </header>
@@ -109,7 +109,7 @@ export function AppShell() {
               </button>
             </div>
             <div className="flex-1 overflow-y-auto px-3 py-4">
-              <SidebarBody onNavigate={() => setMobileOpen(false)} />
+              <ShellNav onNavigate={() => setMobileOpen(false)} alertCount={alerts.length} />
             </div>
           </nav>
         </div>
@@ -124,40 +124,48 @@ export function AppShell() {
             </Link>
           </div>
           <div className="flex-1 overflow-y-auto px-3 pb-4">
-            <SidebarBody />
+            <ShellNav alertCount={alerts.length} />
           </div>
           <div className="border-t border-line px-3 py-3">
-            <Link
-              to="/clinician"
-              className="flex items-center gap-2.5 rounded-md px-3 py-2 text-[13px] font-medium text-ink-500 transition-colors hover:bg-ink-50 hover:text-ink-900"
-            >
-              <Stethoscope className="size-4" />
-              Clinician view
-            </Link>
+            <div className="rounded-md bg-canvas-sunk px-3 py-2.5">
+              <div className="label-xs text-ink-400">On shift</div>
+              <p className="mt-1 text-[12.5px] font-semibold text-ink-900">{clinician?.name}</p>
+              <p className="text-[11px] text-ink-500">
+                {clinician?.department} · {clinician?.organisation}
+              </p>
+              <div className="mt-2 flex items-center gap-1.5">
+                <ShieldCheck className="size-3 text-verified-500" />
+                <span className="font-mono text-[10px] text-ink-500">
+                  {clinician?.licenceId} · verified
+                </span>
+              </div>
+            </div>
           </div>
         </aside>
 
+        {/* --- Content ------------------------------------------------------ */}
         <div className="min-w-0 flex-1">
-          {/* Desktop top bar */}
+          {/* Desktop top bar — the emergency count lives in the chrome so it is
+              visible from every screen, not only the overview. */}
           <div className="sticky top-0 z-20 hidden items-center gap-4 border-b border-line bg-canvas/95 px-8 py-2.5 backdrop-blur-sm lg:flex">
-            {emergency ? (
-              <Link
-                to="/app/dashboard"
+            {alerts.length > 0 ? (
+              <button
+                onClick={() => navigate('/clinician/emergency')}
                 className="flex items-center gap-2 rounded-md border border-critical-300 bg-critical-50 px-2.5 py-1.5 transition-colors hover:bg-critical-100/70"
               >
                 <span className="size-1.5 rounded-full bg-critical-500 pulse-dot" />
                 <span className="text-[12.5px] font-semibold text-critical-700">
-                  Your emergency is active
+                  {alerts.length} active emergency{alerts.length === 1 ? '' : ' alerts'}
                 </span>
-              </Link>
+              </button>
             ) : (
               <span className="flex items-center gap-2 text-[12.5px] text-ink-400">
-                <ShieldCheck className="size-3.5 text-verified-500" />
-                Emergency profile ready · you control every grant
+                <span className="size-1.5 rounded-full bg-verified-500" />
+                No active emergencies
               </span>
             )}
             <div className="ml-auto flex items-center gap-1">
-              <NotificationBell recipientId={patientUser.id} href="/app/notifications" />
+              <NotificationBell recipientId={clinicianUser.id} href="/clinician/notifications" />
               <AccountChip />
             </div>
           </div>
@@ -171,45 +179,21 @@ export function AppShell() {
   );
 }
 
-function SidebarBody({ onNavigate }: { onNavigate?: () => void }) {
-  const conflicts = useOpenConflicts();
+function ShellNav({
+  onNavigate,
+  alertCount,
+}: {
+  onNavigate?: () => void;
+  alertCount: number;
+}) {
   const { requests } = useVita();
-  const { unread } = useNotifications(patientUser.id);
-  const pending = requests.filter((r) => r.patientId === kavita.id && r.status === 'pending').length;
-  const counts = { conflicts: conflicts.length, requests: pending, notifications: unread };
+  const pending = requests.filter((r) => r.status === 'pending').length;
 
   return (
     <div className="space-y-6">
-      {/* Patient context — never ambiguous whose record is on screen. */}
-      <div className="rounded-lg border border-line bg-white p-3 shadow-card">
-        <div className="flex items-center gap-2.5">
-          <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-ink-900 font-mono text-[11px] font-semibold text-white">
-            {kavita.photoInitials}
-          </div>
-          <div className="min-w-0">
-            <p className="truncate text-[13px] font-semibold text-ink-900">{kavita.fullName}</p>
-            <p className="truncate font-mono text-[10.5px] text-ink-400">
-              {kavita.age} {kavita.sex.charAt(0)} · {kavita.abhaMasked}
-            </p>
-          </div>
-        </div>
-        <div className="mt-2.5 flex items-center justify-between">
-          <span className="label-xs text-ink-400">Profile</span>
-          <span className="font-mono text-[11px] font-medium text-ink-700">
-            {kavita.profileCompleteness}%
-          </span>
-        </div>
-        <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-ink-100">
-          <div
-            className="h-full rounded-full bg-ink-800"
-            style={{ width: `${kavita.profileCompleteness}%` }}
-          />
-        </div>
-      </div>
-
-      <NavGroup label="Health" items={healthNav} onNavigate={onNavigate} counts={counts} />
-      <NavGroup label="Sources" items={sourcesNav} onNavigate={onNavigate} counts={counts} />
-      <NavGroup label="Trust" items={trustNav} onNavigate={onNavigate} counts={counts} />
+      <NavGroup label="Care" items={workNav} onNavigate={onNavigate} alertCount={alertCount} pending={pending} />
+      <NavGroup label="Access" items={flowNav} onNavigate={onNavigate} alertCount={alertCount} pending={pending} />
+      <NavGroup label="Record" items={recordNav} onNavigate={onNavigate} alertCount={alertCount} pending={pending} />
     </div>
   );
 }
@@ -218,39 +202,47 @@ function NavGroup({
   label,
   items,
   onNavigate,
-  counts,
+  alertCount,
+  pending,
 }: {
   label: string;
   items: NavItem[];
   onNavigate?: () => void;
-  counts: { conflicts: number; requests: number; notifications: number };
+  alertCount: number;
+  pending: number;
 }) {
   return (
     <div>
       <div className="label-xs px-3 pb-2 text-ink-400">{label}</div>
       <nav className="space-y-0.5">
-        {items.map(({ to, label: l, icon: Icon, badge }) => {
-          const count = badge ? counts[badge] : 0;
+        {items.map(({ to, label: l, icon: Icon, end, badge }) => {
+          const count = badge === 'emergency' ? alertCount : badge === 'requests' ? pending : 0;
           return (
             <NavLink
               key={to}
               to={to}
+              end={end}
               onClick={onNavigate}
               className={({ isActive }) =>
                 cn(
                   'flex items-center gap-2.5 rounded-md px-3 py-2 text-[13.5px] font-medium transition-colors duration-150',
-                  isActive
-                    ? 'bg-ink-900 text-white'
-                    : 'text-ink-600 hover:bg-ink-50 hover:text-ink-900',
+                  isActive ? 'bg-ink-900 text-white' : 'text-ink-600 hover:bg-ink-50 hover:text-ink-900',
                 )
               }
             >
               {({ isActive }) => (
                 <>
-                  <Icon className={cn('size-4 shrink-0', isActive ? 'text-white' : 'text-ink-400')} />
+                  <Icon
+                    className={cn(
+                      'size-4 shrink-0',
+                      isActive ? 'text-white' : badge === 'emergency' && count > 0 ? 'text-critical-500' : 'text-ink-400',
+                    )}
+                  />
                   <span className="flex-1 truncate">{l}</span>
                   {count > 0 && (
-                    <Badge tone={isActive ? 'neutral' : 'caution'}>{count}</Badge>
+                    <Badge tone={badge === 'emergency' ? 'critical' : isActive ? 'neutral' : 'caution'}>
+                      {count}
+                    </Badge>
                   )}
                 </>
               )}
@@ -262,9 +254,9 @@ function NavGroup({
   );
 }
 
-/* --- Shared page frame ---------------------------------------------------- */
+/* --- Page frame, matching the patient shell's ---------------------------------- */
 
-export function PageHeader({
+export function ClinicianPageHeader({
   eyebrow,
   title,
   description,
@@ -277,11 +269,11 @@ export function PageHeader({
 }) {
   return (
     <div className="border-b border-line bg-white">
-      <div className="mx-auto max-w-[1080px] px-5 py-7 sm:px-8 sm:py-9">
+      <div className="mx-auto max-w-[1140px] px-5 py-7 sm:px-8">
         <div className="flex flex-wrap items-end justify-between gap-5">
           <div className="min-w-0">
             {eyebrow && <div className="label-xs mb-2.5 text-ink-400">{eyebrow}</div>}
-            <h1 className="text-[26px] font-semibold leading-tight tracking-[-0.028em] text-ink-900 sm:text-[30px]">
+            <h1 className="text-[26px] font-semibold leading-tight tracking-[-0.028em] text-ink-900">
               {title}
             </h1>
             {description && (
@@ -297,7 +289,7 @@ export function PageHeader({
   );
 }
 
-export function PageBody({
+export function ClinicianPageBody({
   children,
   className,
 }: {
@@ -305,8 +297,6 @@ export function PageBody({
   className?: string;
 }) {
   return (
-    <div className={cn('mx-auto max-w-[1080px] px-5 py-7 sm:px-8 sm:py-9', className)}>
-      {children}
-    </div>
+    <div className={cn('mx-auto max-w-[1140px] px-5 py-7 sm:px-8', className)}>{children}</div>
   );
 }
