@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Timeline } from '@/components/clinical/Timeline';
+import { PremiumGate } from '@/components/subscription/PremiumGate';
 import { Card, EmptyState, FieldLabel, Tabs } from '@/components/ui';
 import { PageBody, PageHeader } from '@/layouts/AppShell';
 import { documents } from '@/data/documents';
@@ -51,26 +52,30 @@ export default function TimelinePage() {
           <SummaryStat label="Graph edges" value={String(edgeCount)} sub="event ↔ entity links" />
         </div>
 
-        <Tabs
-          tabs={[
-            { id: 'all', label: 'Everything', count: timeline.length },
-            { id: 'major', label: 'Major history', count: timeline.filter((e) => e.major).length },
-            {
-              id: 'medication-change',
-              label: 'Medication changes',
-              count: timeline.filter((e) => e.kind === 'medication-change' || e.kind === 'medication-start').length,
-            },
-            { id: 'lab', label: 'Labs', count: timeline.filter((e) => e.kind === 'lab').length },
-          ]}
-          active={filter}
-          onChange={(id) => setFilter(id as Filter)}
-        />
+        {/* The gate renders a bare fragment when entitled, so PageBody's own
+            spacing still applies to what is inside it. */}
+        <PremiumGate feature="longitudinal-timeline" title="Longitudinal timeline">
+          <Tabs
+            tabs={[
+              { id: 'all', label: 'Everything', count: timeline.length },
+              { id: 'major', label: 'Major history', count: timeline.filter((e) => e.major).length },
+              {
+                id: 'medication-change',
+                label: 'Medication changes',
+                count: timeline.filter((e) => e.kind === 'medication-change' || e.kind === 'medication-start').length,
+              },
+              { id: 'lab', label: 'Labs', count: timeline.filter((e) => e.kind === 'lab').length },
+            ]}
+            active={filter}
+            onChange={(id) => setFilter(id as Filter)}
+          />
 
-        {events.length === 0 ? (
-          <EmptyState title="No events in this view" />
-        ) : (
-          <Timeline events={events} />
-        )}
+          {events.length === 0 ? (
+            <EmptyState title="No events in this view" />
+          ) : (
+            <Timeline events={events} />
+          )}
+        </PremiumGate>
 
         <Card accent="accent">
           <FieldLabel>Why this is a timeline and not a folder</FieldLabel>

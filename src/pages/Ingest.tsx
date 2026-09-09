@@ -2,6 +2,7 @@ import { FileText, Scale, ShieldCheck, TriangleAlert } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AIProcessing } from '@/components/system/AIProcessing';
+import { PremiumGate } from '@/components/subscription/PremiumGate';
 import { DocumentUploader } from '@/components/system/DocumentUploader';
 import { Badge, Card, FieldLabel, SectionHeader, buttonClasses } from '@/components/ui';
 import { PageBody, PageHeader } from '@/layouts/AppShell';
@@ -47,8 +48,12 @@ export default function Ingest() {
             }
           />
 
+          {/* The prepared documents below stay readable on every plan — only
+              running the extractor over a new upload is a paid capability. */}
           <div className="mt-4">
-            <DocumentUploader />
+            <PremiumGate feature="ai-extraction" title="AI extraction on your own documents">
+              <DocumentUploader />
+            </PremiumGate>
           </div>
 
           <ul className="mt-3 grid gap-2 sm:grid-cols-2">

@@ -2,6 +2,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type ReactNode,
@@ -21,6 +22,7 @@ import {
   userIdForClinician,
   userIdForPatient,
 } from '@/data/platform';
+import { apiFetch, apiPost } from '@/lib/api';
 import { extractEntities } from '@/lib/clinicalNer';
 import { readDocument } from '@/lib/docReader';
 import { clockTime } from '@/lib/format';
@@ -101,8 +103,14 @@ interface VitaContextValue {
   /* --- Session ------------------------------------------------------------ */
   user: User | null;
   role: Role | null;
-  signInAs: (role: Role) => void;
-  signOut: () => void;
+  /**
+   * Establishes a real server session before exposing the user locally, so a
+   * subscription lookup that fires on the user changing already has a cookie
+   * to present. Resolves even when the API is unreachable — the demo has to
+   * keep working on the static build, which has no API at all.
+   */
+  signInAs: (role: Role) => Promise<void>;
+  signOut: () => Promise<void>;
 
   /* --- Platform ----------------------------------------------------------- */
   grants: ConsentGrant[];
@@ -258,11 +266,50 @@ export function VitaProvider({ children }: { children: ReactNode }) {
 
   /* --- Session -------------------------------------------------------------- */
 
-  const signInAs = useCallback((role: Role) => {
+  const signInAs = useCallback(async (role: Role) => {
+    // Server first. Setting the local user before the cookie exists would race
+    // the subscription fetch that watches it, and lose.
+    try {
+      await apiPost('/auth/login', { role });
+    } catch {
+      // No API reachable (the static build). Local session only, which means
+      // no paid plan — the entitlement resolver fails closed to freemium.
+    }
     setUser(role === 'patient' ? patientUser : clinicianUser);
   }, []);
 
-  const signOut = useCallback(() => setUser(null), []);
+  const signOut = useCallback(async () => {
+    setUser(null);
+    try {
+      await apiPost('/auth/logout');
+    } catch {
+      // Nothing to do: the local session is already gone.
+    }
+  }, []);
+
+  /**
+   * Rehydrate the session from the server cookie on load.
+   *
+   * Necessary because the local user is React state, and a return from a
+   * payment provider is a full page load. Without this, somebody who has just
+   * paid comes back to a signed-out application — and the surfaces outside the
+   * two shells, such as checkout, have no auto-sign-in effect to save them.
+   *
+   * A failure here means no session or no API, and leaves the app signed out.
+   */
+  useEffect(() => {
+    let cancelled = false;
+    apiFetch<{ user: { role: Role } }>('/auth/me')
+      .then(({ user: session }) => {
+        if (!cancelled) setUser(session.role === 'patient' ? patientUser : clinicianUser);
+      })
+      .catch(() => {
+        /* Signed out, or the static build with no API. */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   /* --- Emergency ------------------------------------------------------------ */
 

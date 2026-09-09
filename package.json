@@ -4,15 +4,26 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "concurrently -n web,api -c cyan,magenta \"vite\" \"tsx watch server/index.ts\"",
+    "dev:web": "vite",
+    "dev:api": "tsx watch server/index.ts",
     "build": "tsc --noEmit && vite build && node scripts/spa-fallback.mjs",
+    "build:api": "tsc -p server/tsconfig.json",
+    "start:api": "node dist-server/server/index.js",
     "preview": "vite preview",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit && tsc -p server/tsconfig.test.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "razorpay:setup": "tsx server/scripts/setup-plans.ts"
   },
   "dependencies": {
+    "better-sqlite3": "^13.0.3",
+    "cookie-parser": "^1.4.7",
+    "express": "^5.2.1",
     "framer-motion": "^13.2.0",
     "lucide-react": "^1.43.0",
     "pdfjs-dist": "^6.3.289",
+    "razorpay": "^2.9.8",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-router-dom": "^7.18.3",
@@ -20,12 +31,20 @@
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",
+    "@types/better-sqlite3": "^9.6.0",
+    "@types/cookie-parser": "^1.4.10",
+    "@types/express": "^5.0.6",
     "@types/node": "^26.5.0",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",
+    "@types/supertest": "^7.2.1",
     "@vitejs/plugin-react": "^6.1.1",
+    "concurrently": "^10.0.5",
+    "supertest": "^7.2.2",
     "tailwindcss": "^4.3.3",
+    "tsx": "^4.23.13",
     "typescript": "^7.0.2",
-    "vite": "^8.2.2"
+    "vite": "^8.2.2",
+    "vitest": "^5.0.0"
   }
 }

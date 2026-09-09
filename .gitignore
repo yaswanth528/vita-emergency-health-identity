@@ -1,6 +1,21 @@
 node_modules
 dist
+dist-server
 dist-ssr
 *.local
 .DS_Store
 .vite
+
+# Payment credentials and session secret. Never commit.
+.env
+.env.*
+!.env.example
+
+# SQLite database and its WAL sidecars. The leading slash anchors this to the
+# repository root — a bare `data/` also matches src/data/, which is the app's
+# seed data and must stay tracked.
+/data/
+*.sqlite
+*.sqlite-journal
+*.sqlite-wal
+*.sqlite-shm

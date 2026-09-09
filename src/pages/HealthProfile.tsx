@@ -12,6 +12,7 @@ import {
 import { Link } from 'react-router-dom';
 import { AllergyAlert, ConditionCard, LabTrendCard, MedicationCard } from '@/components/clinical';
 import { HealthGraph } from '@/components/clinical/HealthGraph';
+import { PremiumGate } from '@/components/subscription/PremiumGate';
 import { EvidenceBadge } from '@/components/evidence/EvidenceBadge';
 import { Badge, Card, FieldLabel, SectionHeader, buttonClasses } from '@/components/ui';
 import { PageBody, PageHeader } from '@/layouts/AppShell';
@@ -121,7 +122,9 @@ export default function HealthProfile() {
             description="What reconciliation produced that a document pile cannot: the link between each condition and the medication treating it."
           />
           <div className="mt-4">
-            <HealthGraph />
+            <PremiumGate feature="health-graph" title="Reconciled health graph">
+              <HealthGraph />
+            </PremiumGate>
           </div>
         </section>
 

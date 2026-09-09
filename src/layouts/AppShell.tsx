@@ -1,6 +1,7 @@
 import {
   Activity,
   CalendarClock,
+  CreditCard,
   FileStack,
   HeartPulse,
   Inbox,
@@ -62,6 +63,10 @@ const trustNav: NavItem[] = [
   { to: '/app/notifications', label: 'Notifications', icon: Activity, badge: 'notifications' },
   { to: '/app/caregiver', label: 'Caregiver', icon: UsersRound },
   { to: '/app/settings', label: 'Security', icon: Activity },
+];
+
+const accountNav: NavItem[] = [
+  { to: '/app/billing', label: 'Plan & billing', icon: CreditCard },
 ];
 
 export function AppShell() {
@@ -210,6 +215,7 @@ function SidebarBody({ onNavigate }: { onNavigate?: () => void }) {
       <NavGroup label="Health" items={healthNav} onNavigate={onNavigate} counts={counts} />
       <NavGroup label="Sources" items={sourcesNav} onNavigate={onNavigate} counts={counts} />
       <NavGroup label="Trust" items={trustNav} onNavigate={onNavigate} counts={counts} />
+      <NavGroup label="Account" items={accountNav} onNavigate={onNavigate} counts={counts} />
     </div>
   );
 }

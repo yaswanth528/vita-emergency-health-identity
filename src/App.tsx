@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import { EvidenceDrawer } from '@/components/evidence/EvidenceDrawer';
 import { DemoGuide } from '@/components/system/DemoGuide';
 import { ScrollToTop } from '@/components/system/ScrollToTop';
+import { SubscriptionProvider } from '@/hooks/useSubscription';
 import { VitaProvider } from '@/hooks/useVita';
 import { AppShell } from '@/layouts/AppShell';
 import { ClinicianShell } from '@/layouts/ClinicianShell';
@@ -10,6 +11,13 @@ import Landing from '@/pages/Landing';
 import Login from '@/pages/Login';
 import { RegisterClinician, RegisterPatient } from '@/pages/auth/Register';
 import NotFound from '@/pages/NotFound';
+
+/* Subscription — public pricing, then the paid flow. */
+import Pricing from '@/pages/Pricing';
+import Billing from '@/pages/Billing';
+import Checkout from '@/pages/subscription/Checkout';
+import SubscriptionFailure from '@/pages/subscription/Failure';
+import SubscriptionSuccess from '@/pages/subscription/Success';
 
 /* Emergency Mode — its own surface, outside both shells. */
 import EmergencyEntry from '@/pages/EmergencyEntry';
@@ -63,8 +71,9 @@ import {
 export default function App() {
   return (
     <VitaProvider>
-      <ScrollToTop />
-      <Routes>
+      <SubscriptionProvider>
+        <ScrollToTop />
+        <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register/patient" element={<RegisterPatient />} />
@@ -73,6 +82,15 @@ export default function App() {
         {/* Emergency Mode is a mode, not a page inside an app. */}
         <Route path="/emergency" element={<EmergencyEntry />} />
         <Route path="/emergency/:patientId" element={<EmergencyMode />} />
+
+        {/* --- Subscription ------------------------------------------------- */}
+        {/* Public, because the price list is not something to sign in to read.
+            The static outcome routes are declared before the plan parameter so
+            /subscribe/success can never be read as a plan id. */}
+        <Route path="/pricing" element={<Pricing />} />
+        <Route path="/subscribe/success" element={<SubscriptionSuccess />} />
+        <Route path="/subscribe/failed" element={<SubscriptionFailure />} />
+        <Route path="/subscribe/:planId" element={<Checkout />} />
 
         {/* --- Patient ----------------------------------------------------- */}
         <Route path="/app" element={<AppShell />}>
@@ -89,6 +107,7 @@ export default function App() {
           <Route path="consent" element={<Consent />} />
           <Route path="notifications" element={<PatientNotifications />} />
           <Route path="caregiver" element={<Caregiver />} />
+          <Route path="billing" element={<Billing />} />
           <Route path="settings" element={<Settings />} />
         </Route>
 
@@ -110,10 +129,11 @@ export default function App() {
         <Route path="/clinician/patient/:patientId" element={<Navigate to="/clinician/patients" replace />} />
 
         <Route path="*" element={<NotFound />} />
-      </Routes>
+        </Routes>
 
-      <EvidenceDrawer />
-      <DemoGuide />
+        <EvidenceDrawer />
+        <DemoGuide />
+      </SubscriptionProvider>
     </VitaProvider>
   );
 }

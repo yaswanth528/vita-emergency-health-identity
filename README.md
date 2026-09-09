@@ -17,16 +17,27 @@ npm install
 npm run dev
 ```
 
-Then open <http://localhost:5173>. A **Guided demo** button sits in the bottom-left of every
-screen and walks the full nine-step story in about two minutes.
+`dev` starts the Vite app on <http://localhost:5173> and the API on `:4000`, with `/api`
+proxied so the session cookie stays first-party. A **Guided demo** button sits in the
+bottom-left of every screen and walks the full nine-step story in about two minutes.
+
+Everything except the paid plans works with no configuration. To enable checkout, copy
+`.env.example` to `.env`, add your Razorpay **test** keys, and run `npm run razorpay:setup`
+once to create the plans. Without keys, the pricing page says payments are unavailable
+rather than opening a checkout that cannot succeed.
 
 ```bash
-npm run build      # production build
-npm run typecheck  # tsc --noEmit
+npm run dev        # app + API
+npm run dev:web    # app only
+npm run build      # production build of the frontend
+npm run build:api  # compile the API to dist-server
+npm run typecheck  # tsc across app, shared and server
+npm run test       # vitest — 130 tests over the billing tier
 ```
 
 Stack: React 19 · TypeScript · Vite · Tailwind v4 · react-router · framer-motion ·
-pdf.js and Tesseract.js (both lazy-loaded, only when a document is actually read).
+pdf.js and Tesseract.js (both lazy-loaded, only when a document is actually read) ·
+Express · SQLite · Razorpay Subscriptions.
 
 ---
 
@@ -174,20 +185,35 @@ about the system's judgement.
 ## Architecture
 
 ```
+shared/          imported by BOTH tiers, so they cannot disagree
+  plans          the plan catalogue — prices in integer paise, features per plan
+  subscription   the wire contract and the subscription state machine
+  identities     the two demo accounts, so a session means the same user on both sides
+
 src/
   components/
     ui/          Button Card Badge Stat Tabs Progress SectionHeader …
     evidence/    EvidenceBadge ConfidenceMeter EvidenceDrawer (evidence + conflict modes)
     clinical/    AllergyAlert MedicationCard ConditionCard LabTrendCard Timeline HealthGraph
+    subscription/ PlanCard · PremiumGate
     system/      AIProcessing ConsentPanel AuditLog DemoGuide Wordmark
   layouts/       AppShell (patient) · ClinicianShell
-  pages/         one file per route; patient/ and clinician/ subtrees
+  pages/         one file per route; patient/, clinician/ and subscription/ subtrees
   data/          patient · clinical · documents · evidence · extractions
                  conflicts · timeline · consent (+ audit) · platform
   hooks/         useVita — one store: session, consent, requests,
                  emergencies, notifications, audit, evidence viewer
-  lib/           aiService · format · elapsed · utils
+                 useSubscription — a cache of what the server said about the plan
+  lib/           aiService · format · elapsed · utils · api · razorpayCheckout
   types/         index (clinical model) · platform (who may see it)
+
+server/          the API — the only tier that holds a secret
+  entitlements   resolveSubscription / hasFeature — the one access check
+  subscription-service  checkout, verification, cancellation, webhook application
+  razorpay-signature    pure HMAC verification, kept separate so tests use the real thing
+  razorpay       the only module that talks to the provider
+  store          every SQL statement
+  routes/        auth · plans · subscription · webhooks
 ```
 
 ### The AI seam
@@ -207,6 +233,52 @@ fixtures for a document AI, an LLM reconciliation pass and a FHIR server means r
 function bodies — not the application.
 
 There is deliberately no `diagnose()`, no `recommend()`, and no `chooseCorrectValue()`.
+
+---
+
+## Plans and payment
+
+Three monthly plans in INR — Freemium ₹0, Individual ₹199, Family ₹399 — billed through
+Razorpay Subscriptions. Prices live once, in `shared/plans.ts`, as integer paise, and both
+the card the customer reads and the amount the server validates come from that file.
+
+**The emergency path is free on every plan.** Allergies, blood group, active medications and
+emergency contacts are released to authorised clinicians under break-glass on Freemium, on a
+cancelled plan and after a failed payment. This product's entire argument is that an
+unconscious patient's history should reach the clinician treating them; charging for that
+would make the argument indefensible. The paid tiers sell depth — extraction on your own
+documents, the longitudinal timeline, the reconciled health graph, caregiver delegation,
+audit export — and Family adds member profiles.
+
+### Reaching the success page is not a payment
+
+`pending` is a distinct subscription state that grants nothing. A plan becomes `active` in
+exactly one function, and that function is reachable only from a verified signature or a
+verified webhook. Four things must hold before it is called: the subscription belongs to the
+session user, the HMAC over `payment_id|subscription_id` recomputes, the provider reports the
+payment captured when asked directly, and the amount equals the plan's price in our own
+catalogue. The confirmation page re-reads the subscription from the server and will say
+"no active plan" for a URL that was simply typed.
+
+### Webhooks are the source of truth
+
+Renewals, dunning and a cancellation made from Razorpay's dashboard never pass through this
+UI, so the webhook decides state. Signatures are verified over the raw bytes — hence the raw
+body parser ahead of the JSON one — and the event id is inserted as a primary key before any
+row is touched, so a replay loses the race and is skipped. Razorpay retries on any non-2xx,
+so at-least-once delivery is the normal case rather than an edge.
+
+### Cancelling keeps what was paid for
+
+Cancellation defaults to the end of the period already paid for; the plan keeps working and
+the entitlement resolver expires it into Freemium when the date passes. A plan change creates
+the new subscription, waits for payment, and only then cancels the old one — so a customer is
+never holding two live mandates, and a failed upgrade leaves them on the plan they had.
+
+One question is answered in one place: `hasFeature(userId, feature)` in
+`server/entitlements.ts` reads the database every time, and the browser's `PremiumGate`
+renders the entitlements that function produced. A locked panel is presentation; the
+`requireFeature` guard on the endpoint is the enforcement.
 
 ---
 
@@ -232,8 +304,14 @@ There is deliberately no `diagnose()`, no `recommend()`, and no `chooseCorrectVa
 
 ## Not built (architected for, deliberately out of scope)
 
-Live ABDM integration · hospital HIS/EMR write-back · production authentication · pharmacy and
-insurance feeds · encryption-at-rest and key management · real clinical decision support.
+Live ABDM integration · hospital HIS/EMR write-back · pharmacy and insurance feeds ·
+encryption-at-rest and key management · real clinical decision support.
+
+Authentication is now half-built and worth stating precisely: sessions are real —
+server-issued, signed, httpOnly, and what the billing tier authorises against — but
+credentials are not. `POST /api/auth/login` still takes a role rather than a password,
+exactly as `/login` has always said. Swapping it for an ABDM handshake or a password changes
+`server/routes/auth.ts` and nothing downstream of it.
 
 These are listed in the app itself, on `/app/settings`. A healthcare prototype that advertises
 only its capabilities is making a claim it cannot cash.

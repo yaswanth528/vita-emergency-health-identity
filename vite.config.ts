@@ -24,6 +24,9 @@ const REPO = 'vita-emergency-health-identity'
 const isPagesBuild =
   process.env.GITHUB_ACTIONS === 'true' || process.env.DEPLOY_TARGET === 'pages'
 
+/** Where the API server listens. Matches PORT in .env. */
+const API_PORT = Number(process.env.PORT ?? 4000)
+
 export default defineConfig(({ command, isPreview }) => {
   // `vite preview` reports command === 'serve', same as dev, so `isPreview`
   // separates them: only the dev server is unconditionally rooted at /.
@@ -33,8 +36,22 @@ export default defineConfig(({ command, isPreview }) => {
     base: isDevServer || !isPagesBuild ? '/' : `/${REPO}/`,
     plugins: [react(), tailwindcss()],
     resolve: {
-      alias: { '@': path.resolve(process.cwd(), 'src') },
+      alias: {
+        '@': path.resolve(process.cwd(), 'src'),
+        // The plan catalogue and subscription contract, shared with the API
+        // server so a price cannot differ between the card and the charge.
+        '@shared': path.resolve(process.cwd(), 'shared'),
+      },
     },
-    server: { port: 5173 },
+    server: {
+      port: 5173,
+      /**
+       * Proxying `/api` keeps the browser and the API on one origin in dev, so
+       * the session cookie is first-party and no CORS configuration is needed.
+       * A deployed frontend on a separate origin points at its API with
+       * VITE_API_URL and sets APP_ORIGIN on the server instead.
+       */
+      proxy: { '/api': `http://localhost:${API_PORT}` },
+    },
   }
 })

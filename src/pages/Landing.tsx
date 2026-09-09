@@ -91,6 +91,12 @@ function Nav() {
           >
             Clinician login
           </Link>
+          <Link
+            to="/pricing"
+            className="rounded-md px-3 py-2 text-[13px] font-medium text-ink-600 transition-colors hover:bg-ink-50 hover:text-ink-900"
+          >
+            Pricing
+          </Link>
           <Link to="/login" className={buttonClasses({ variant: 'secondary', size: 'sm' })}>
             Sign in
           </Link>
@@ -813,6 +819,9 @@ function Footer() {
           </Link>
           <Link to="/login" className="hover:text-ink-900">
             Sign in
+          </Link>
+          <Link to="/pricing" className="hover:text-ink-900">
+            Pricing
           </Link>
           <Link to="/app/consent" className="hover:text-ink-900">
             Consent & audit

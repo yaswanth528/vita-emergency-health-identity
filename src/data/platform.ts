@@ -1,3 +1,4 @@
+import { DEMO_IDENTITIES } from '@shared/identities';
 import type {
   AccessRequest,
   AppNotification,
@@ -61,21 +62,15 @@ export const clinicianById = (id: string) => clinicians.find((c) => c.id === id)
  * is what selects the shell, the navigation and the permitted actions — there
  * is no shared dashboard that branches on a flag.
  */
+/**
+ * Identity comes from `shared/identities.ts` and the clinical links are added
+ * here. The id and email have to match the row the API issues a session
+ * against, or a paid plan would belong to a user the browser never claims to
+ * be — so they live in the module both tiers import.
+ */
 export const demoUsers: User[] = [
-  {
-    id: 'usr-patient-kavita',
-    role: 'patient',
-    name: 'Kavita Menon',
-    email: 'kavita.menon@example.com',
-    patientId: 'pt-4491',
-  },
-  {
-    id: 'usr-clinician-rao',
-    role: 'clinician',
-    name: 'Dr. Arjun Rao',
-    email: 'arjun.rao@apollo.example',
-    clinicianId: 'cl-rao',
-  },
+  { ...DEMO_IDENTITIES.patient, patientId: 'pt-4491' },
+  { ...DEMO_IDENTITIES.clinician, clinicianId: 'cl-rao' },
 ];
 
 export const patientUser = demoUsers[0];
