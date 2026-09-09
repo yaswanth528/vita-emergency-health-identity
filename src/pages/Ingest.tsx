@@ -1,7 +1,8 @@
-import { CloudUpload, FileText, Scale, ShieldCheck, TriangleAlert } from 'lucide-react';
+import { FileText, Scale, ShieldCheck, TriangleAlert } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AIProcessing } from '@/components/system/AIProcessing';
+import { DocumentUploader } from '@/components/system/DocumentUploader';
 import { Badge, Card, FieldLabel, SectionHeader, buttonClasses } from '@/components/ui';
 import { PageBody, PageHeader } from '@/layouts/AppShell';
 import { documents } from '@/data/documents';
@@ -23,7 +24,7 @@ import { fileSize } from '@/lib/format';
 export default function Ingest() {
   const [ran, setRan] = useState(false);
   const conflicts = useOpenConflicts();
-  const { openConflict } = useVita();
+  const { openConflict, markUploadsProcessed } = useVita();
 
   return (
     <>
@@ -37,8 +38,8 @@ export default function Ingest() {
         {/* --- Queue -------------------------------------------------------- */}
         <section>
           <SectionHeader
-            eyebrow={`${documents.length} in queue`}
-            title="Source documents"
+            eyebrow={`${documents.length} prepared`}
+            title="Add a record"
             action={
               <Link to="/app/documents" className={buttonClasses({ variant: 'secondary', size: 'sm' })}>
                 Open document centre
@@ -46,17 +47,8 @@ export default function Ingest() {
             }
           />
 
-          <div className="mt-4 rounded-lg border border-dashed border-line-strong bg-canvas-sunk/50 px-5 py-6">
-            <div className="flex flex-col items-center text-center">
-              <CloudUpload className="size-5 text-ink-300" />
-              <p className="mt-2.5 text-[13.5px] font-medium text-ink-700">
-                Drop a prescription, discharge summary, lab report or scan
-              </p>
-              <p className="mt-1 max-w-md text-[12.5px] leading-relaxed text-ink-500">
-                PDF, JPG or PNG. Handwritten scans are accepted and routed through OCR — with a lower
-                acceptance threshold applied to what they assert.
-              </p>
-            </div>
+          <div className="mt-4">
+            <DocumentUploader />
           </div>
 
           <ul className="mt-3 grid gap-2 sm:grid-cols-2">
@@ -88,7 +80,12 @@ export default function Ingest() {
             description="Each stage reports countable output. If a number here is unimpressive, that is information too."
           />
           <div className="mt-4">
-            <AIProcessing onComplete={() => setRan(true)} />
+            <AIProcessing
+              onComplete={() => {
+                setRan(true);
+                markUploadsProcessed();
+              }}
+            />
           </div>
         </section>
 

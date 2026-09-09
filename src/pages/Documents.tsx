@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { UploadButton } from '@/components/system/DocumentUploader';
 import { Badge, Card, EmptyState, FieldLabel, Tabs, buttonClasses } from '@/components/ui';
 import { PageBody, PageHeader } from '@/layouts/AppShell';
 import { documentKindLabel, documents } from '@/data/documents';
@@ -66,10 +67,13 @@ export default function Documents() {
         title="Documents"
         description={`${documents.length} source documents from ${new Set(documents.map((d) => d.source)).size} systems. ${totalEntities} structured entities extracted, every one traceable back to a page.`}
         actions={
-          <Link to="/app/ingest" className={buttonClasses({ variant: 'primary' })}>
-            <Plus className="size-[15px]" />
-            Add record
-          </Link>
+          <>
+            <UploadButton />
+            <Link to="/app/ingest" className={buttonClasses({ variant: 'primary' })}>
+              <Plus className="size-[15px]" />
+              Add record
+            </Link>
+          </>
         }
       />
 

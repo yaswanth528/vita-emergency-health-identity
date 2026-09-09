@@ -41,6 +41,7 @@ import type {
   RequestReason,
   RequestUrgency,
   Role,
+  UploadedFile,
   User,
 } from '@/types/platform';
 import { requestReasonLabel } from '@/types/platform';
@@ -129,6 +130,13 @@ interface VitaContextValue {
   markNotificationRead: (id: string) => void;
   markAllNotificationsRead: (recipientId: string) => void;
 
+  /* --- Uploads ------------------------------------------------------------ */
+  uploads: UploadedFile[];
+  /** Returns what was rejected so the UI can say why, rather than failing silently. */
+  addUploads: (files: File[]) => { accepted: number; rejected: { name: string; why: string }[] };
+  removeUpload: (id: string) => void;
+  markUploadsProcessed: () => void;
+
   /** Legacy flag used by Emergency Mode to mark the surface active. */
   emergencyActive: boolean;
   setEmergencyActive: (v: boolean) => void;
@@ -154,6 +162,7 @@ export function VitaProvider({ children }: { children: ReactNode }) {
   const [requests, setRequests] = useState<AccessRequest[]>(seedRequests);
   const [notifications, setNotifications] = useState<AppNotification[]>(seedNotifications);
   const [emergencies, setEmergencies] = useState<EmergencyEvent[]>([]);
+  const [uploads, setUploads] = useState<UploadedFile[]>([]);
 
   /* --- Primitives --------------------------------------------------------- */
 
@@ -496,6 +505,70 @@ export function VitaProvider({ children }: { children: ReactNode }) {
     );
   }, []);
 
+  /* --- Uploads --------------------------------------------------------------- */
+
+  const ACCEPTED = ['application/pdf', 'image/png', 'image/jpeg', 'image/webp'];
+  const MAX_MB = 25;
+
+  const addUploads = useCallback(
+    (files: File[]) => {
+      const rejected: { name: string; why: string }[] = [];
+      const accepted: UploadedFile[] = [];
+
+      for (const f of files) {
+        // Extension fallback: some browsers report an empty type for PDFs
+        // dragged from certain file managers.
+        const byExt = /.(pdf|png|jpe?g|webp)$/i.test(f.name);
+        if (!ACCEPTED.includes(f.type) && !byExt) {
+          rejected.push({ name: f.name, why: 'Not a PDF or image' });
+          continue;
+        }
+        if (f.size > MAX_MB * 1024 * 1024) {
+          rejected.push({ name: f.name, why: `Larger than ${MAX_MB} MB` });
+          continue;
+        }
+        accepted.push({
+          id: uid('upl'),
+          name: f.name,
+          sizeKb: Math.max(1, Math.round(f.size / 1024)),
+          mime: f.type || (/.pdf$/i.test(f.name) ? 'application/pdf' : 'image/*'),
+          kind: f.type === 'application/pdf' || /.pdf$/i.test(f.name) ? 'pdf' : 'image',
+          addedAt: stamp(),
+          status: 'queued',
+        });
+      }
+
+      if (accepted.length) {
+        setUploads((prev) => [...accepted, ...prev]);
+        logAudit(
+          'export',
+          `${accepted.length} document${accepted.length === 1 ? '' : 's'} added by the patient: ${accepted
+            .map((a) => a.name)
+            .join(', ')}. Queued for processing.`,
+        );
+      }
+      return { accepted: accepted.length, rejected };
+    },
+    [logAudit],
+  );
+
+  const removeUpload = useCallback((id: string) => {
+    setUploads((prev) => prev.filter((u) => u.id !== id));
+  }, []);
+
+  const markUploadsProcessed = useCallback(() => {
+    setUploads((prev) =>
+      prev.map((u) =>
+        u.status === 'processed'
+          ? u
+          : // A stand-in count. The prototype has no document AI, so this is
+            // derived from file size rather than from anything on the page,
+            // and the UI labels it as simulated wherever it appears.
+            { ...u, status: 'processed' as const, simulatedExtraction: Math.max(3, Math.round(u.sizeKb / 40)) },
+      ),
+    );
+  }, []);
+
   const audit = useMemo(() => [...sessionAudit, ...seedAudit], [sessionAudit]);
 
   const value = useMemo<VitaContextValue>(
@@ -526,6 +599,10 @@ export function VitaProvider({ children }: { children: ReactNode }) {
       revokeGrant,
       markNotificationRead,
       markAllNotificationsRead,
+      uploads,
+      addUploads,
+      removeUpload,
+      markUploadsProcessed,
       emergencyActive,
       setEmergencyActive,
     }),
@@ -555,6 +632,10 @@ export function VitaProvider({ children }: { children: ReactNode }) {
       revokeGrant,
       markNotificationRead,
       markAllNotificationsRead,
+      uploads,
+      addUploads,
+      removeUpload,
+      markUploadsProcessed,
       emergencyActive,
     ],
   );

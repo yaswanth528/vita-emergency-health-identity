@@ -162,3 +162,25 @@ export interface AppNotification {
   /** Emergency notifications sort and style above everything else. */
   priority: 'normal' | 'high';
 }
+
+/* --- Uploads ------------------------------------------------------------------ */
+
+/**
+ * A file the user actually chose from their machine.
+ *
+ * Only real metadata is recorded — name, size, type. The prototype has no
+ * document AI behind it, so nothing here ever claims to know what is *inside*
+ * the file. `simulatedExtraction` is named the way it is on purpose: the UI
+ * must be able to say "this number is a stand-in" rather than quietly implying
+ * the page was read.
+ */
+export interface UploadedFile {
+  id: string;
+  name: string;
+  sizeKb: number;
+  mime: string;
+  kind: 'pdf' | 'image';
+  addedAt: string;
+  status: 'queued' | 'processed';
+  simulatedExtraction?: number;
+}
